@@ -16,3 +16,10 @@
 - [x] Ladeanimation für Wetter- und Nachrichtenmodule im Orbital-Stil implementieren.
 - [x] Ladeanimation mit reduzierter Bewegung in Desktop- und Mobilansicht prüfen.
 - [x] Animationsänderung testen und als neuen Projektstand sichern.
+- [x] Funktionalen 3D-Nexo-Kern mit räumlicher Tiefe und realistischerem Materialverhalten implementieren.
+- [x] Reaktive 3D-Zustände für Idle, Listening, Thinking und Speaking integrieren.
+- [x] Performance, Reduced Motion und responsive 3D-Darstellung prüfen.
+- [x] 3D-Erweiterung als neuen Projektstand sichern.
+- [x] Reduced-Motion-Verhalten des 3D-Kerns über die vorhandene Accessibility-Regel und Regressionstest verifizieren.
+- [x] Pointer-Interaktion und 3D-Rendering ohne Layout- oder Overflow-Probleme dokumentieren.
+- [x] Nach der Verifikation den 3D-Stand mit einem neuen Checkpoint sichern.

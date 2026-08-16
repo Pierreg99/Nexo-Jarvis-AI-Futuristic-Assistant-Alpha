@@ -114,6 +114,7 @@ export default function Home() {
   const [headlinesError, setHeadlinesError] = useState(false);
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
   const [selectedCalendarProvider, setSelectedCalendarProvider] = useState<"google" | "outlook" | null>(null);
+  const [coreTilt, setCoreTilt] = useState({ x: 0, y: 0 });
   const [conversation, setConversation] = useState<Conversation[]>([
     { id: 1, sender: "nexo", text: "Good evening. All primary systems are in range. What shall we focus on?", time: "20:41" },
   ]);
@@ -284,6 +285,13 @@ export default function Home() {
     recognition.start();
   };
 
+  const handleCorePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+    setCoreTilt({ x: Number((y * -7).toFixed(2)), y: Number((x * 7).toFixed(2)) });
+  };
+
   const coreClass = assistantState === "idle" ? "" : `core-${assistantState}`;
   const moduleTitle = moduleItems.find((item) => item.id === activeModule)?.label ?? "Command bay";
 
@@ -373,9 +381,16 @@ export default function Home() {
               <div className="relative flex min-h-[372px] items-center justify-center overflow-hidden">
                 <div className="absolute left-2 top-5 hidden text-left sm:block"><div className="technical-label">Core index</div><div className="mt-1 font-mono text-xs text-cyan-50">04.771</div><div className="mt-5 technical-label">Inference</div><div className="mt-1 font-mono text-xs text-cyan-50">32 ms</div></div>
                 <div className="absolute right-2 top-5 hidden text-right sm:block"><div className="technical-label">Active channel</div><div className="mt-1 font-mono text-xs text-cyan-50">VOICE_01</div><div className="mt-5 technical-label">Signal fidelity</div><div className="mt-1 font-mono text-xs text-cyan-50">99.8%</div></div>
-                <div className={`core-stage ${coreClass}`} aria-label={`Nexo core is ${assistantState}`}>
+                <div className={`core-stage ${coreClass}`} aria-label={`Nexo core is ${assistantState}`} onPointerMove={handleCorePointerMove} onPointerLeave={() => setCoreTilt({ x: 0, y: 0 })}>
+                  <div className="core-depth" style={{ transform: `rotateX(${coreTilt.x}deg) rotateY(${coreTilt.y}deg)` }} aria-hidden="true">
+                    <div className="core-depth-shell core-depth-shell-a" />
+                    <div className="core-depth-shell core-depth-shell-b" />
+                    <div className="core-depth-lens" />
+                    <i className="core-particle core-particle-a" /><i className="core-particle core-particle-b" /><i className="core-particle core-particle-c" />
+                  </div>
                   <div className="orbit" />
                   <img className="core-image" src="/manus-storage/nexo-core-hero_85de455d.png" alt="Animated Nexo orbital core" />
+                  <div className="core-glare" aria-hidden="true" />
                   <div className="absolute bottom-3 text-center"><div className="technical-label text-cyan-100/55">Nexo core</div><div className="mt-1 text-xs text-cyan-50">{assistantState === "idle" ? "Standing by" : statusCopy}</div></div>
                 </div>
               </div>
