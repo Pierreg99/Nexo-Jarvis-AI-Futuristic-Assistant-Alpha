@@ -13,3 +13,6 @@
 - [x] Changelog für die bisherigen Projektstände erstellen.
 - [x] Fortschrittsbericht mit erledigten Punkten und offenen Grenzen erstellen.
 - [x] Dokumentationsänderungen prüfen und als neuen Projektstand sichern.
+- [x] Ladeanimation für Wetter- und Nachrichtenmodule im Orbital-Stil implementieren.
+- [x] Ladeanimation mit reduzierter Bewegung in Desktop- und Mobilansicht prüfen.
+- [x] Animationsänderung testen und als neuen Projektstand sichern.

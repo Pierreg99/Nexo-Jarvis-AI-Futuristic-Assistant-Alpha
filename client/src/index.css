@@ -237,6 +237,71 @@ button:not(:disabled), [role="button"] { cursor: pointer; }
   letter-spacing: 0.14em;
 }
 
+.live-loading-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+  color: rgba(229, 251, 255, 0.92);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.67rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.live-loading-orbit {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 1px solid rgba(38, 228, 255, 0.22);
+  border-top-color: #26e4ff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(38, 228, 255, 0.28);
+  animation: spin 1.1s linear infinite;
+}
+
+.live-loading-stack {
+  position: relative;
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1.35rem;
+  padding-right: 1.2rem;
+  overflow: hidden;
+}
+
+.live-loading-stack span,
+.live-news-loading span {
+  display: block;
+  height: 0.38rem;
+  border: 1px solid rgba(38, 228, 255, 0.1);
+  background: linear-gradient(90deg, rgba(38, 228, 255, 0.13), rgba(38, 228, 255, 0.045), rgba(38, 228, 255, 0.12));
+  background-size: 220% 100%;
+  animation: telemetry-shimmer 1.8s ease-in-out infinite;
+}
+
+.live-loading-stack span:nth-child(2) { width: 76%; animation-delay: 120ms; }
+.live-loading-stack span:nth-child(3) { width: 54%; animation-delay: 240ms; }
+
+.live-news-loading {
+  position: relative;
+  display: grid;
+  gap: 0.75rem;
+  overflow: hidden;
+  padding: 0.25rem 0 0.7rem 0.75rem;
+  border-left: 1px solid rgba(38, 228, 255, 0.25);
+}
+
+.live-news-loading span:nth-of-type(1) { width: 92%; }
+.live-news-loading span:nth-of-type(2) { width: 72%; animation-delay: 140ms; }
+.live-news-loading span:nth-of-type(3) { width: 48%; animation-delay: 280ms; }
+.live-news-scanline {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  background: #26e4ff;
+  box-shadow: 0 0 12px 2px rgba(38, 228, 255, 0.7);
+  animation: scanline-sweep 1.55s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+
 .transcript-scroll::-webkit-scrollbar { width: 4px; }
 .transcript-scroll::-webkit-scrollbar-thumb { background: rgba(38, 228, 255, 0.3); }
 
@@ -246,6 +311,8 @@ button:not(:disabled), [role="button"] { cursor: pointer; }
 @keyframes listen-pulse { 0%, 100% { transform: scale(0.9); opacity: 0.75; } 50% { transform: scale(1.12); opacity: 1; } }
 @keyframes think-pulse { 0%, 100% { transform: scale(0.98); } 50% { transform: scale(1.075); } }
 @keyframes speak-wave { 0%, 100% { transform: scaleX(0.96) scaleY(1.02); } 50% { transform: scaleX(1.06) scaleY(0.95); } }
+@keyframes telemetry-shimmer { 0%, 100% { background-position: 100% 0; opacity: 0.48; } 50% { background-position: 0 0; opacity: 1; } }
+@keyframes scanline-sweep { 0% { transform: translateY(-0.8rem); opacity: 0; } 18%, 72% { opacity: 1; } 100% { transform: translateY(5.5rem); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
