@@ -8,11 +8,15 @@ import {
   AudioLines,
   Bell,
   BrainCircuit,
+  CalendarDays,
   ChevronRight,
   CircleHelp,
+  CloudSun,
   Command,
+  ExternalLink,
   Gauge,
   Headphones,
+  MapPin,
   Mic,
   MicOff,
   Moon,
@@ -20,6 +24,7 @@ import {
   PanelLeft,
   Plus,
   Radio,
+  RefreshCw,
   Search,
   Send,
   Settings2,
@@ -27,9 +32,12 @@ import {
   TerminalSquare,
   TimerReset,
   Volume2,
+  WifiOff,
   X,
 } from "lucide-react";
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type AssistantState = "idle" | "listening" | "thinking" | "speaking";
 type Module = "command" | "terminal" | "knowledge" | "media" | "monitor" | "settings";
@@ -39,6 +47,27 @@ type Conversation = {
   sender: "user" | "nexo";
   text: string;
   time: string;
+};
+
+type WeatherTelemetry = {
+  temperature: number;
+  apparentTemperature: number;
+  windSpeed: number;
+  condition: string;
+  timezone: string;
+};
+
+type LiveHeadline = {
+  title: string;
+  url: string;
+  domain: string;
+};
+
+const weatherCodeLabels: Record<number, string> = {
+  0: "Clear sky", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Rime fog",
+  51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle", 61: "Light rain", 63: "Rain", 65: "Heavy rain",
+  71: "Light snow", 73: "Snow", 75: "Heavy snow", 80: "Rain showers", 81: "Heavy rain showers", 82: "Violent rain showers",
+  95: "Thunderstorm", 96: "Thunderstorm with hail", 99: "Severe thunderstorm with hail",
 };
 
 const moduleItems: { id: Module; label: string; icon: typeof Command }[] = [
@@ -75,6 +104,16 @@ export default function Home() {
   const [isRailOpen, setIsRailOpen] = useState(false);
   const [isSoundOn, setIsSoundOn] = useState(true);
   const [input, setInput] = useState("");
+  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationState, setLocationState] = useState<"locating" | "ready" | "denied">("locating");
+  const [weather, setWeather] = useState<WeatherTelemetry | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState(false);
+  const [headlines, setHeadlines] = useState<LiveHeadline[]>([]);
+  const [headlinesLoading, setHeadlinesLoading] = useState(true);
+  const [headlinesError, setHeadlinesError] = useState(false);
+  const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
+  const [selectedCalendarProvider, setSelectedCalendarProvider] = useState<"google" | "outlook" | null>(null);
   const [conversation, setConversation] = useState<Conversation[]>([
     { id: 1, sender: "nexo", text: "Good evening. All primary systems are in range. What shall we focus on?", time: "20:41" },
   ]);
@@ -87,6 +126,22 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationState("denied");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoordinates({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        setLocationState("ready");
+      },
+      () => setLocationState("denied"),
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 900_000 },
+    );
+  }, []);
+
+  useEffect(() => {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: "smooth" });
   }, [conversation]);
 
@@ -96,6 +151,75 @@ export default function Home() {
     thinking: "Processing intent",
     speaking: "Response in progress",
   })[assistantState], [assistantState]);
+
+  const calendarQuery = trpc.live.calendarStatus.useQuery(undefined, { staleTime: 60_000 });
+
+  const refreshWeather = useCallback(async (location: { latitude: number; longitude: number }) => {
+    setWeatherLoading(true);
+    setWeatherError(false);
+    try {
+      const endpoint = new URL("https://api.open-meteo.com/v1/forecast");
+      endpoint.searchParams.set("latitude", location.latitude.toFixed(4));
+      endpoint.searchParams.set("longitude", location.longitude.toFixed(4));
+      endpoint.searchParams.set("current", "temperature_2m,apparent_temperature,weather_code,wind_speed_10m");
+      endpoint.searchParams.set("timezone", "auto");
+      const response = await fetch(endpoint);
+      if (!response.ok) throw new Error("Weather request failed");
+      const payload = await response.json() as { timezone?: string; current?: { temperature_2m?: number; apparent_temperature?: number; weather_code?: number; wind_speed_10m?: number } };
+      if (typeof payload.current?.temperature_2m !== "number") throw new Error("No weather telemetry");
+      setWeather({
+        temperature: payload.current.temperature_2m,
+        apparentTemperature: payload.current.apparent_temperature ?? payload.current.temperature_2m,
+        windSpeed: payload.current.wind_speed_10m ?? 0,
+        condition: weatherCodeLabels[payload.current.weather_code ?? -1] ?? "Conditions unavailable",
+        timezone: payload.timezone ?? "UTC",
+      });
+    } catch {
+      setWeatherError(true);
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, []);
+
+  const refreshHeadlines = useCallback(async () => {
+    setHeadlinesLoading(true);
+    setHeadlinesError(false);
+    try {
+      const response = await fetch("https://hn.algolia.com/api/v1/search_by_date?tags=story&hitsPerPage=5");
+      if (!response.ok) throw new Error("News request failed");
+      const payload = await response.json() as { hits?: Array<{ title?: string; story_title?: string; url?: string; story_url?: string; objectID: string }> };
+      const entries = (payload.hits ?? [])
+        .map((item) => ({
+          title: item.title ?? item.story_title ?? "Untitled signal",
+          url: item.url ?? item.story_url ?? `https://news.ycombinator.com/item?id=${item.objectID}`,
+        }))
+        .filter((item) => item.title !== "Untitled signal")
+        .slice(0, 3)
+        .map((item) => ({ ...item, domain: new URL(item.url).hostname.replace(/^www\./, "") }));
+      setHeadlines(entries);
+    } catch {
+      setHeadlinesError(true);
+    } finally {
+      setHeadlinesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (coordinates) void refreshWeather(coordinates);
+  }, [coordinates, refreshWeather]);
+
+  useEffect(() => {
+    void refreshHeadlines();
+  }, [refreshHeadlines]);
+
+  useEffect(() => {
+    const refreshOnFocus = () => {
+      if (coordinates) void refreshWeather(coordinates);
+      void refreshHeadlines();
+    };
+    window.addEventListener("focus", refreshOnFocus);
+    return () => window.removeEventListener("focus", refreshOnFocus);
+  }, [coordinates, refreshHeadlines, refreshWeather]);
 
   const respond = (text: string) => {
     const reply = getReply(text);
@@ -274,28 +398,29 @@ export default function Home() {
             </section>
 
             <aside className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
-              <section className="instrument-panel perimeter-module panel-cut relative min-h-[190px] overflow-hidden border-l p-5">
+              <section className="instrument-panel perimeter-module panel-cut relative min-h-[200px] overflow-hidden border-l p-5">
                 <div className="corner-mark" />
-                <div className="relative z-10 flex items-start justify-between"><div><div className="technical-label">Knowledge signal</div><h2 className="mt-2 text-base font-semibold text-white">Signals, not noise.</h2><p className="mt-1 max-w-[13rem] text-xs leading-relaxed text-cyan-50/56">A concise feed, routed toward the questions you actually ask.</p></div><ArrowUpRight size={17} className="text-cyan-200" /></div>
-                <img src="/manus-storage/nexo-knowledge-atlas_b18115ae.png" alt="Abstract knowledge atlas" className="absolute bottom-[-42px] right-[-38px] w-56 opacity-55 mix-blend-screen" />
-                <button onClick={() => setActiveModule("knowledge")} className="absolute bottom-4 left-5 z-10 flex items-center gap-2 text-xs text-cyan-200 transition-colors hover:text-white"><Search size={13} />Access signal</button>
-                <span className="module-coordinate">AUX · 07.31</span>
+                <div className="relative z-10 flex items-start justify-between"><div><div className="technical-label">Local weather</div><h2 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{weather ? `${Math.round(weather.temperature)}°` : locationState === "locating" ? "—" : "Location"}</h2><p className="mt-1 max-w-[13rem] text-xs leading-relaxed text-cyan-50/56">{weather ? `${weather.condition} · Feels like ${Math.round(weather.apparentTemperature)}°` : weatherError ? "Weather relay is temporarily unavailable." : locationState === "denied" ? "Enable location access to receive weather telemetry." : "Locating your command environment…"}</p></div><button onClick={() => coordinates && void refreshWeather(coordinates)} disabled={!coordinates || weatherLoading} className="grid h-7 w-7 place-items-center text-cyan-200 transition-colors hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:text-cyan-100/25" aria-label="Refresh weather"><CloudSun size={22} /></button></div>
+                <div className="absolute bottom-4 left-5 z-10 flex items-center gap-2 text-xs text-cyan-200"><MapPin size={13} />{weather ? `${Math.round(weather.windSpeed)} km/h wind · ${weather.timezone}` : "Awaiting coordinates"}</div>
+                <span className="module-coordinate">WX · LIVE</span>
               </section>
 
-              <section className="instrument-panel perimeter-module panel-cut relative border-l p-5">
+              <section className="instrument-panel perimeter-module panel-cut relative min-h-[225px] border-l p-5">
                 <div className="corner-mark" />
-                <div className="flex items-center justify-between"><div><div className="technical-label">System pulse</div><div className="mt-2 text-lg font-semibold text-white">Nominal</div></div><Activity size={22} className="text-cyan-300" /></div>
-                <div className="mt-5 space-y-3">
-                  {[{ label: "Neural bandwidth", value: 84 }, { label: "Memory cache", value: 62 }, { label: "Voice fidelity", value: 98 }].map((item) => <div key={item.label}><div className="mb-1.5 flex justify-between font-mono text-[0.6rem] text-cyan-100/55"><span>{item.label}</span><span>{item.value}%</span></div><div className="h-px bg-cyan-100/10"><div className="h-px bg-cyan-300 shadow-[0_0_7px_#26e4ff]" style={{ width: `${item.value}%` }} /></div></div>)}
+                <div className="flex items-center justify-between"><div><div className="technical-label">News relay</div><div className="mt-2 text-base font-semibold text-white">Current signals</div></div><button onClick={() => void refreshHeadlines()} disabled={headlinesLoading} className="grid h-7 w-7 place-items-center text-cyan-300 transition-colors hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:text-cyan-100/25" aria-label="Refresh news"><RefreshCw size={17} className={headlinesLoading ? "animate-spin" : ""} /></button></div>
+                <div className="mt-4 space-y-3">
+                  {headlinesLoading && <div className="font-mono text-[0.65rem] text-cyan-100/45">Scanning current headlines…</div>}
+                  {headlinesError && <div className="flex items-center gap-2 text-xs text-amber-200"><WifiOff size={14} />News relay is temporarily unavailable.</div>}
+                  {headlines.slice(0, 2).map((headline) => <a key={headline.url} href={headline.url} target="_blank" rel="noreferrer" className="group block border-l border-cyan-300/25 pl-3 text-xs leading-relaxed text-cyan-50/76 transition-colors hover:border-cyan-200 hover:text-cyan-50"><span className="line-clamp-2">{headline.title}</span><span className="mt-1 flex items-center gap-1 font-mono text-[0.56rem] text-cyan-200/55">{headline.domain}<ExternalLink size={10} /></span></a>)}
                 </div>
-                <span className="module-coordinate">SYS · NOMINAL</span>
+                <span className="module-coordinate">NEWS · 10M</span>
               </section>
 
               <section className="instrument-panel perimeter-module panel-cut relative border-l p-5 sm:col-span-2 xl:col-span-1">
                 <div className="corner-mark" />
-                <div className="flex items-center justify-between"><div className="technical-label">Command vectors</div><Sparkles size={15} className="text-cyan-300" /></div>
-                <div className="mt-3 flex flex-wrap gap-2">{shortcutPrompts.map((prompt) => <button key={prompt} onClick={() => submitCommand(prompt)} className="border border-cyan-100/12 px-2.5 py-1.5 text-left text-[0.68rem] text-cyan-50/65 transition-colors hover:border-cyan-200/45 hover:bg-cyan-300/[0.06] hover:text-cyan-50">{prompt}</button>)}</div>
-                <span className="module-coordinate">ROUTE · SELECT</span>
+                <div className="flex items-center justify-between"><div className="technical-label">Calendar relay</div><CalendarDays size={17} className="text-cyan-300" /></div>
+                {calendarQuery.data?.connected ? <div className="mt-3 text-xs text-cyan-50/72">Your next calendar events are synchronised.</div> : <div className="mt-3"><p className="text-xs leading-relaxed text-cyan-50/58">{calendarQuery.data?.message ?? "Checking calendar connection…"}</p><button onClick={() => setCalendarDialogOpen(true)} className="mt-3 flex items-center gap-2 text-xs text-cyan-200 transition-colors hover:text-white"><Settings2 size={13} />Open connection settings</button></div>}
+                <span className="module-coordinate">CAL · SECURE</span>
               </section>
             </aside>
           </div>
@@ -307,6 +432,25 @@ export default function Home() {
           </div>
         </main>
       </div>
+
+      <Dialog open={calendarDialogOpen} onOpenChange={setCalendarDialogOpen}>
+        <DialogContent className="max-w-md border-cyan-200/25 bg-[#071319] p-0 text-cyan-50 shadow-[0_25px_80px_rgba(0,0,0,.55)]">
+          <div className="border-b border-cyan-100/10 px-6 py-5">
+            <DialogHeader>
+              <div className="technical-label text-cyan-200/70">Calendar relay / secure link</div>
+              <DialogTitle className="mt-1 text-xl tracking-[-0.03em] text-white">Connect a calendar</DialogTitle>
+              <DialogDescription className="text-xs leading-relaxed text-cyan-50/58">Choose the calendar environment you want to authorize for the Nexo command bay. Events are never displayed until the account permission is confirmed.</DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="space-y-3 px-6 py-5">
+            {([
+              { id: "google" as const, name: "Google Calendar", detail: "View your next events and focus windows." },
+              { id: "outlook" as const, name: "Outlook Calendar", detail: "View your Microsoft 365 calendar signals." },
+            ]).map((provider) => <button key={provider.id} onClick={() => setSelectedCalendarProvider(provider.id)} className={`w-full border p-4 text-left transition-colors ${selectedCalendarProvider === provider.id ? "border-cyan-200 bg-cyan-300/[0.1]" : "border-cyan-100/15 bg-cyan-100/[0.025] hover:border-cyan-200/45"}`}><div className="flex items-center justify-between gap-4"><div><div className="text-sm font-medium text-white">{provider.name}</div><div className="mt-1 text-xs leading-relaxed text-cyan-50/54">{provider.detail}</div></div><span className={`technical-label text-[0.51rem] ${selectedCalendarProvider === provider.id ? "text-cyan-200" : "text-cyan-100/40"}`}>{selectedCalendarProvider === provider.id ? "Selected" : "Not connected"}</span></div></button>)}
+          </div>
+          <div className="border-t border-cyan-100/10 px-6 py-4"><p className="text-xs leading-relaxed text-amber-100/70">{selectedCalendarProvider ? `Authorization for ${selectedCalendarProvider === "google" ? "Google Calendar" : "Outlook Calendar"} must be approved before data can be read.` : "Select a provider to prepare the authorization request."}</p></div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
