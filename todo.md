@@ -23,3 +23,14 @@
 - [x] Reduced-Motion-Verhalten des 3D-Kerns über die vorhandene Accessibility-Regel und Regressionstest verifizieren.
 - [x] Pointer-Interaktion und 3D-Rendering ohne Layout- oder Overflow-Probleme dokumentieren.
 - [x] Nach der Verifikation den 3D-Stand mit einem neuen Checkpoint sichern.
+- [x] Lazy geladene WebGL-Rendering-Grundlage mit Geräte- und Bewegungs-Fallback einrichten.
+- [x] Prozedurale 3D-Nexo-Szene mit Metallringen, Energiekern, Licht und Partikelfeld implementieren.
+- [x] Drag-to-orbit, Zoom, Reset und immersive Fokusansicht integrieren.
+- [x] Assistentenzustände als Licht-, Partikel- und Kamerareaktionen in die WebGL-Szene überführen.
+- [x] WebGL-Fallback, Reduced Motion, Desktop-, Tablet- und Touch-Nutzung prüfen.
+- [x] Maximale 3D-Erweiterung testen und als neuen Projektstand sichern.
+- [x] Eigenständige Kamerareaktionen für Listening, Thinking und Speaking ergänzen.
+- [x] WebGL-Szene auf Tablet, mit Touch-Nutzung und unter Reduced Motion gezielt verifizieren.
+- [x] Finalen WebGL-Stand nach allen Prüfungen als neuen Checkpoint sichern.
+- [x] Touch-Interaktion und Reduced-Motion-Fallback der WebGL-Szene zur Laufzeit dokumentiert prüfen.
+- [x] WebGL-Endstand nach der Laufzeitprüfung als Checkpoint sichern.

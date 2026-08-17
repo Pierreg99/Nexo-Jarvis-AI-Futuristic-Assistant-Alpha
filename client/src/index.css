@@ -402,6 +402,36 @@ button:not(:disabled), [role="button"] { cursor: pointer; }
 @keyframes depth-thinking { 0%, 100% { transform: scale(0.98) rotateZ(0deg); } 50% { transform: scale(1.045) rotateZ(4deg); } }
 @keyframes depth-speaking { 0%, 100% { transform: scaleX(0.97) scaleY(1.03); } 50% { transform: scaleX(1.06) scaleY(0.95); } }
 
+.core-stage-webgl { overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 50% 48%, rgba(11, 47, 59, 0.45), rgba(1, 8, 13, 0.96) 69%); box-shadow: 0 0 0 1px rgba(38, 228, 255, 0.14), 0 24px 70px rgba(0,0,0,.55), inset 0 0 60px rgba(38, 228, 255, .08); }
+.nexo-webgl-scene { position: absolute; inset: 0; overflow: hidden; touch-action: none; }
+.nexo-webgl-scene canvas { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
+.nexo-webgl-vignette { pointer-events: none; position: absolute; inset: 0; background: radial-gradient(circle, transparent 35%, rgba(0, 5, 9, .12) 58%, rgba(0, 3, 6, .82) 100%); z-index: 2; }
+.nexo-webgl-reticle { pointer-events: none; position: absolute; inset: 7%; z-index: 3; border: 1px solid rgba(38, 228, 255, .16); border-radius: 50%; }
+.nexo-webgl-reticle span { position: absolute; width: 9px; height: 9px; border-color: rgba(110, 244, 255, .7); }
+.nexo-webgl-reticle span:nth-child(1) { left: 0; top: 50%; border-top: 1px solid; }
+.nexo-webgl-reticle span:nth-child(2) { right: 0; top: 50%; border-top: 1px solid; }
+.nexo-webgl-reticle span:nth-child(3) { left: 50%; top: 0; border-left: 1px solid; }
+.nexo-webgl-reticle span:nth-child(4) { left: 50%; bottom: 0; border-left: 1px solid; }
+.core-webgl-loader, .nexo-focus-loading { display: grid; place-items: center; gap: .65rem; width: 100%; height: 100%; color: rgba(190,248,255,.75); font: 500 .62rem/1.4 "IBM Plex Mono", monospace; letter-spacing: .16em; text-transform: uppercase; }
+.core-webgl-loader span { width: 1.3rem; height: 1.3rem; border: 1px solid rgba(38,228,255,.22); border-top-color: #26e4ff; border-radius: 50%; animation: spin 1s linear infinite; }
+.core-control-strip { position: absolute; right: 9%; top: 14%; z-index: 8; display: flex; gap: .4rem; }
+.core-control { display: grid; place-items: center; width: 1.8rem; height: 1.8rem; border: 1px solid rgba(38, 228, 255, .26); background: rgba(2, 14, 20, .64); color: #a9f7ff; backdrop-filter: blur(9px); transition: background 160ms ease-out, border-color 160ms ease-out, transform 160ms ease-out; }
+.core-control:hover { border-color: #26e4ff; background: rgba(38,228,255,.13); }
+.core-control:active { transform: scale(.95); }
+.core-control-large { width: 2.25rem; height: 2.25rem; }
+.nexo-focus-dialog { height: min(88vh, 850px); overflow: hidden; }
+.nexo-focus-dialog .nexo-webgl-scene { position: relative; height: calc(100% - 66px); }
+.nexo-focus-dialog .nexo-webgl-scene-immersive { min-height: 540px; }
+.nexo-focus-topbar { position: relative; z-index: 5; display: flex; align-items: center; justify-content: space-between; min-height: 66px; padding: .9rem 1.2rem; border-bottom: 1px solid rgba(38,228,255,.16); background: linear-gradient(90deg, rgba(4,18,25,.94), rgba(2,8,13,.86)); }
+.nexo-focus-loading { min-height: 540px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}
+
+@media (max-width: 640px) {
+  .core-control-strip { right: 7%; top: 12%; }
+  .nexo-focus-dialog { height: 88svh; }
+  .nexo-focus-dialog .nexo-webgl-scene-immersive { min-height: 0; height: calc(88svh - 72px); }
+  .nexo-focus-topbar { align-items: flex-start; gap: .75rem; }
 }

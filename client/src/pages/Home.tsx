@@ -17,6 +17,7 @@ import {
   Gauge,
   Headphones,
   MapPin,
+  Maximize2,
   Mic,
   MicOff,
   Moon,
@@ -25,6 +26,7 @@ import {
   Plus,
   Radio,
   RefreshCw,
+  RotateCcw,
   Search,
   Send,
   Settings2,
@@ -35,9 +37,11 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+const NexoCore3D = lazy(() => import("@/components/NexoCore3D"));
 
 type AssistantState = "idle" | "listening" | "thinking" | "speaking";
 type Module = "command" | "terminal" | "knowledge" | "media" | "monitor" | "settings";
@@ -115,6 +119,9 @@ export default function Home() {
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
   const [selectedCalendarProvider, setSelectedCalendarProvider] = useState<"google" | "outlook" | null>(null);
   const [coreTilt, setCoreTilt] = useState({ x: 0, y: 0 });
+  const [webglEnabled, setWebglEnabled] = useState(false);
+  const [coreFocusOpen, setCoreFocusOpen] = useState(false);
+  const [coreSceneKey, setCoreSceneKey] = useState(0);
   const [conversation, setConversation] = useState<Conversation[]>([
     { id: 1, sender: "nexo", text: "Good evening. All primary systems are in range. What shall we focus on?", time: "20:41" },
   ]);
@@ -140,6 +147,18 @@ export default function Home() {
       () => setLocationState("denied"),
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 900_000 },
     );
+  }, []);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotionPreview = new URLSearchParams(window.location.search).has("reducedMotionPreview");
+    try {
+      const canvas = document.createElement("canvas");
+      const hasWebGL = Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+      setWebglEnabled(hasWebGL && !reducedMotion && !reducedMotionPreview);
+    } catch {
+      setWebglEnabled(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -381,17 +400,10 @@ export default function Home() {
               <div className="relative flex min-h-[372px] items-center justify-center overflow-hidden">
                 <div className="absolute left-2 top-5 hidden text-left sm:block"><div className="technical-label">Core index</div><div className="mt-1 font-mono text-xs text-cyan-50">04.771</div><div className="mt-5 technical-label">Inference</div><div className="mt-1 font-mono text-xs text-cyan-50">32 ms</div></div>
                 <div className="absolute right-2 top-5 hidden text-right sm:block"><div className="technical-label">Active channel</div><div className="mt-1 font-mono text-xs text-cyan-50">VOICE_01</div><div className="mt-5 technical-label">Signal fidelity</div><div className="mt-1 font-mono text-xs text-cyan-50">99.8%</div></div>
-                <div className={`core-stage ${coreClass}`} aria-label={`Nexo core is ${assistantState}`} onPointerMove={handleCorePointerMove} onPointerLeave={() => setCoreTilt({ x: 0, y: 0 })}>
-                  <div className="core-depth" style={{ transform: `rotateX(${coreTilt.x}deg) rotateY(${coreTilt.y}deg)` }} aria-hidden="true">
-                    <div className="core-depth-shell core-depth-shell-a" />
-                    <div className="core-depth-shell core-depth-shell-b" />
-                    <div className="core-depth-lens" />
-                    <i className="core-particle core-particle-a" /><i className="core-particle core-particle-b" /><i className="core-particle core-particle-c" />
-                  </div>
-                  <div className="orbit" />
-                  <img className="core-image" src="/manus-storage/nexo-core-hero_85de455d.png" alt="Animated Nexo orbital core" />
-                  <div className="core-glare" aria-hidden="true" />
-                  <div className="absolute bottom-3 text-center"><div className="technical-label text-cyan-100/55">Nexo core</div><div className="mt-1 text-xs text-cyan-50">{assistantState === "idle" ? "Standing by" : statusCopy}</div></div>
+                <div className={`core-stage ${coreClass} ${webglEnabled ? "core-stage-webgl" : ""}`} aria-label={`Nexo core is ${assistantState}`} onPointerMove={webglEnabled ? undefined : handleCorePointerMove} onPointerLeave={webglEnabled ? undefined : () => setCoreTilt({ x: 0, y: 0 })}>
+                  {webglEnabled ? <Suspense fallback={<div className="core-webgl-loader"><span />Calibrating spatial core</div>}><NexoCore3D key={coreSceneKey} state={assistantState} /></Suspense> : <><div className="core-depth" style={{ transform: `rotateX(${coreTilt.x}deg) rotateY(${coreTilt.y}deg)` }} aria-hidden="true"><div className="core-depth-shell core-depth-shell-a" /><div className="core-depth-shell core-depth-shell-b" /><div className="core-depth-lens" /><i className="core-particle core-particle-a" /><i className="core-particle core-particle-b" /><i className="core-particle core-particle-c" /></div><div className="orbit" /><img className="core-image" src="/manus-storage/nexo-core-hero_85de455d.png" alt="Animated Nexo orbital core" /><div className="core-glare" aria-hidden="true" /></>}
+                  <div className="core-control-strip"><button onClick={() => setCoreSceneKey((key) => key + 1)} className="core-control" aria-label="Reset 3D core view"><RotateCcw size={13} /></button><button onClick={() => setCoreFocusOpen(true)} className="core-control" aria-label="Open immersive 3D core"><Maximize2 size={13} /></button></div>
+                  <div className="absolute bottom-3 z-10 text-center"><div className="technical-label text-cyan-100/55">Nexo core {webglEnabled ? "· WebGL" : "· fallback"}</div><div className="mt-1 text-xs text-cyan-50">{assistantState === "idle" ? "Standing by" : statusCopy}</div></div>
                 </div>
               </div>
 
@@ -465,6 +477,13 @@ export default function Home() {
             ]).map((provider) => <button key={provider.id} onClick={() => setSelectedCalendarProvider(provider.id)} className={`w-full border p-4 text-left transition-colors ${selectedCalendarProvider === provider.id ? "border-cyan-200 bg-cyan-300/[0.1]" : "border-cyan-100/15 bg-cyan-100/[0.025] hover:border-cyan-200/45"}`}><div className="flex items-center justify-between gap-4"><div><div className="text-sm font-medium text-white">{provider.name}</div><div className="mt-1 text-xs leading-relaxed text-cyan-50/54">{provider.detail}</div></div><span className={`technical-label text-[0.51rem] ${selectedCalendarProvider === provider.id ? "text-cyan-200" : "text-cyan-100/40"}`}>{selectedCalendarProvider === provider.id ? "Selected" : "Not connected"}</span></div></button>)}
           </div>
           <div className="border-t border-cyan-100/10 px-6 py-4"><p className="text-xs leading-relaxed text-amber-100/70">{selectedCalendarProvider ? `Authorization for ${selectedCalendarProvider === "google" ? "Google Calendar" : "Outlook Calendar"} must be approved before data can be read.` : "Select a provider to prepare the authorization request."}</p></div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={coreFocusOpen} onOpenChange={setCoreFocusOpen}>
+        <DialogContent className="nexo-focus-dialog max-w-none border-0 bg-[#02080d] p-0 text-cyan-50 sm:max-w-[min(96vw,1120px)]" showCloseButton={false}>
+          <div className="nexo-focus-topbar"><div><div className="technical-label text-cyan-200/70">Immersive core / spatial control</div><div className="mt-1 text-sm text-cyan-50">Drag to orbit · Scroll or pinch to zoom</div></div><div className="flex items-center gap-2"><button onClick={() => setCoreSceneKey((key) => key + 1)} className="core-control core-control-large" aria-label="Reset immersive 3D core"><RotateCcw size={15} /></button><button onClick={() => setCoreFocusOpen(false)} className="core-control core-control-large" aria-label="Close immersive 3D core"><X size={16} /></button></div></div>
+          {webglEnabled ? <Suspense fallback={<div className="nexo-focus-loading">Calibrating immersive scene…</div>}><NexoCore3D key={`focus-${coreSceneKey}`} state={assistantState} immersive /></Suspense> : <div className="nexo-focus-loading">The immersive WebGL scene is unavailable on this device. The command-bay fallback remains active.</div>}
         </DialogContent>
       </Dialog>
     </div>
