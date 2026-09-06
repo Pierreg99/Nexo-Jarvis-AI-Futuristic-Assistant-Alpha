@@ -1,0 +1,1 @@
+Nexo Jarvis 2.0 main branch is the approved agent foundation snapshot.
