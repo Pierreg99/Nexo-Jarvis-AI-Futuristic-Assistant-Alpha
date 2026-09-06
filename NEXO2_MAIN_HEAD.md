@@ -1,0 +1,1 @@
+Nexo 2.0 main-branch head finalized after agent foundation, tRPC integration, tests, CI and release documentation.
