@@ -1,0 +1,1 @@
+Nexo Jarvis 2.0 finalized on main after agent foundation, tRPC integration, tests and CI.
