@@ -1,0 +1,1 @@
+Nexo 2.0 branch-ready marker. Verified commit: d55afc61909f5e0d886324c2a0e8bc0d95fda6e5.
