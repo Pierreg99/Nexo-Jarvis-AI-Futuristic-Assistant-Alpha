@@ -8,6 +8,7 @@ import { getCurrentWeather, getLatestHeadlines } from "./liveData";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { runAgent, listTools, searchMemory, listMemory, listAutomations, recentAudit } from "./nexo2";
 
 export const appRouter = router({
   system: systemRouter,
@@ -30,6 +31,26 @@ export const appRouter = router({
       message: "Calendar authorization is required before events can be displayed.",
       events: [] as Array<{ id: string; title: string; startAt: string; provider: "google" | "outlook" }>,
     })),
+  }),
+  nexo2: router({
+    tools: router({
+      list: publicProcedure.query(() => listTools()),
+    }),
+    agent: router({
+      run: publicProcedure
+        .input(z.object({ input: z.string().min(1).max(4000), granted: z.enum(["read", "write", "high-risk"]).default("write") }))
+        .mutation(({ input }) => runAgent(input.input, input.granted)),
+    }),
+    memory: router({
+      list: publicProcedure.input(z.object({ limit: z.number().int().min(1).max(100).default(50) }).optional()).query(({ input }) => listMemory(input?.limit)),
+      search: publicProcedure.input(z.object({ query: z.string().min(1).max(1000), limit: z.number().int().min(1).max(50).default(10) })).query(({ input }) => searchMemory(input.query, input.limit)),
+    }),
+    automations: router({
+      list: publicProcedure.query(() => listAutomations()),
+    }),
+    audit: router({
+      recent: publicProcedure.input(z.object({ limit: z.number().int().min(1).max(100).default(50) }).optional()).query(({ input }) => recentAudit(input?.limit)),
+    }),
   }),
 });
 
