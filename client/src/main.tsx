@@ -8,6 +8,7 @@ import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 import "./nexo-redesign.css";
+import "./nexo-redesign-v2.css";
 
 const queryClient = new QueryClient();
 
