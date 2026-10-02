@@ -18,6 +18,7 @@ Enthalten sind eine erweiterbare Tool-Registry, Permission-Gates für riskante A
 | --- | --- |
 | Orbital Instrumentation UI | Umgesetzt |
 | 3D Nexo Core | Umgesetzt |
+| Maximiertes Vollbild-Layout | Umgesetzt |
 | Browser Voice | Umgesetzt |
 | Wetter / News | Umgesetzt |
 | Agent Trace | Nexo 2.0 Foundation |
@@ -44,6 +45,7 @@ pnpm build
 
 - `client/src/pages/Home.tsx` — Command-Bay und Live-Module
 - `client/src/index.css` — Orbital-Instrumentation-Design
+- `client/src/nexo-maximized.css` — Viewport-füllendes Desktop-Layout (ab 1280 × 760 px), mitskalierender Kern und randlose Immersivansicht; Vollbild per Header-Schalter oder Taste `F`
 - `server/routers.ts` — tRPC-Verträge für Live- und Nexo-2.0-Funktionen
 - `server/nexo2/agent.ts` — Agent-Orchestrierung
 - `server/nexo2/tools.ts` — Tool-Registry und Tool-Ausführung

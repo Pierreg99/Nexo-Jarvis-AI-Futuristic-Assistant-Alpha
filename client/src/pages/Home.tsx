@@ -17,9 +17,11 @@ import {
   Gauge,
   Headphones,
   MapPin,
+  Maximize,
   Maximize2,
   Mic,
   MicOff,
+  Minimize,
   Moon,
   Newspaper,
   PanelLeft,
@@ -122,6 +124,8 @@ export default function Home() {
   const [webglEnabled, setWebglEnabled] = useState(false);
   const [coreFocusOpen, setCoreFocusOpen] = useState(false);
   const [coreSceneKey, setCoreSceneKey] = useState(0);
+  const [fullscreenSupported, setFullscreenSupported] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [conversation, setConversation] = useState<Conversation[]>([
     { id: 1, sender: "nexo", text: "Good evening. All primary systems are in range. What shall we focus on?", time: "20:41" },
   ]);
@@ -160,6 +164,32 @@ export default function Home() {
       setWebglEnabled(false);
     }
   }, []);
+
+  useEffect(() => {
+    setFullscreenSupported(Boolean(document.fullscreenEnabled));
+    const syncFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    syncFullscreen();
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenEnabled) return;
+    const request = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    void request.catch(() => setIsFullscreen(Boolean(document.fullscreenElement)));
+  }, []);
+
+  useEffect(() => {
+    // "F" maximizes the command deck, mirroring media players; ignored while typing or with modifiers.
+    const onShortcut = (event: globalThis.KeyboardEvent) => {
+      if ((event.key !== "f" && event.key !== "F") || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+      if ((event.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable='true']")) return;
+      event.preventDefault();
+      toggleFullscreen();
+    };
+    window.addEventListener("keydown", onShortcut);
+    return () => window.removeEventListener("keydown", onShortcut);
+  }, [toggleFullscreen]);
 
   useEffect(() => {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: "smooth" });
@@ -342,13 +372,14 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2">
+          {fullscreenSupported && <button onClick={toggleFullscreen} className={`hidden h-9 w-9 place-items-center transition-colors hover:text-cyan-200 sm:grid ${isFullscreen ? "text-cyan-200" : "text-cyan-50/70"}`} aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} aria-pressed={isFullscreen} aria-keyshortcuts="F" title={`${isFullscreen ? "Exit" : "Enter"} fullscreen (F)`}>{isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}</button>}
           <button className="relative grid h-9 w-9 place-items-center text-cyan-50/70 transition-colors hover:text-cyan-200" aria-label="Notifications"><Bell size={18} /><span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-300" /></button>
           <button onClick={() => setIsSoundOn((on) => !on)} className={`grid h-9 w-9 place-items-center transition-colors ${isSoundOn ? "text-cyan-200" : "text-cyan-50/35"}`} aria-label="Toggle voice output">{isSoundOn ? <Volume2 size={18} /> : <MicOff size={18} />}</button>
           <div className="ml-1 grid h-8 w-8 place-items-center border border-cyan-100/20 bg-cyan-200/10 font-mono text-[0.68rem] text-cyan-100">AJ</div>
         </div>
       </header>
 
-      <div className="relative z-10 flex min-h-[calc(100svh-76px)]">
+      <div className="command-deck-body relative z-10 flex min-h-[calc(100svh-76px)]">
         <aside className={`absolute inset-y-0 left-0 z-30 w-[232px] border-r border-cyan-100/10 bg-[#061016]/95 px-3 py-5 backdrop-blur-xl transition-transform duration-200 lg:static lg:translate-x-0 ${isRailOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <div className="technical-label mb-3 px-3 text-[0.55rem]">Workspace modules</div>
           <nav className="space-y-1">
@@ -369,8 +400,8 @@ export default function Home() {
 
         {isRailOpen && <button aria-label="Close navigation" className="absolute inset-0 z-20 bg-black/55 lg:hidden" onClick={() => setIsRailOpen(false)} />}
 
-        <main className="relative min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-          <div className="mb-5 flex items-end justify-between gap-4">
+        <main className="command-deck-main relative min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+          <div className="command-deck-heading mb-5 flex items-end justify-between gap-4">
             <div>
               <div className="technical-label mb-1 text-cyan-200/70">Module / {moduleTitle}</div>
               <h1 className="text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[1.8rem]">Good evening, Alex.</h1>
@@ -378,8 +409,8 @@ export default function Home() {
             <div className="hidden text-right sm:block"><div className="technical-label">Session duration</div><div className="mt-1 font-mono text-xs text-cyan-100/70">02:13:48</div></div>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
-            <section className="instrument-panel panel-cut relative min-h-[610px] overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
+          <div className="command-grid grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+            <section className="command-core-panel instrument-panel panel-cut relative min-h-[610px] overflow-hidden px-4 py-5 sm:px-6 lg:px-8">
               <div className="corner-mark" />
               <svg className="signal-network" viewBox="0 0 900 440" preserveAspectRatio="none" aria-hidden="true">
                 <path className="signal-route-soft" d="M 0 66 H 180 L 260 142" />
@@ -397,7 +428,7 @@ export default function Home() {
                 <div className="flex items-center gap-4"><span className="technical-label hidden text-[0.54rem] sm:block">Voice input · browser native</span><button onClick={toggleListening} className={`microphone-button flex items-center gap-2 border px-3 py-1.5 text-xs font-medium ${assistantState === "listening" ? "border-cyan-200 bg-cyan-200/15 text-cyan-50 shadow-[0_0_20px_rgba(38,228,255,.18)]" : "border-cyan-100/20 bg-cyan-100/[0.04] text-cyan-100/70 hover:border-cyan-200/60 hover:text-cyan-50"}`}><Mic size={14} />{assistantState === "listening" ? "Stop" : "Speak"}</button></div>
               </div>
 
-              <div className="relative flex min-h-[372px] items-center justify-center overflow-hidden">
+              <div className="command-core-viewport relative flex min-h-[372px] items-center justify-center overflow-hidden">
                 <div className="absolute left-2 top-5 hidden text-left sm:block"><div className="technical-label">Core index</div><div className="mt-1 font-mono text-xs text-cyan-50">04.771</div><div className="mt-5 technical-label">Inference</div><div className="mt-1 font-mono text-xs text-cyan-50">32 ms</div></div>
                 <div className="absolute right-2 top-5 hidden text-right sm:block"><div className="technical-label">Active channel</div><div className="mt-1 font-mono text-xs text-cyan-50">VOICE_01</div><div className="mt-5 technical-label">Signal fidelity</div><div className="mt-1 font-mono text-xs text-cyan-50">99.8%</div></div>
                 <div className={`core-stage ${coreClass} ${webglEnabled ? "core-stage-webgl" : ""}`} aria-label={`Nexo core is ${assistantState}`} onPointerMove={webglEnabled ? undefined : handleCorePointerMove} onPointerLeave={webglEnabled ? undefined : () => setCoreTilt({ x: 0, y: 0 })}>
@@ -424,7 +455,7 @@ export default function Home() {
               </div>
             </section>
 
-            <aside className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
+            <aside className="telemetry-rail grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
               <section className="instrument-panel perimeter-module panel-cut relative min-h-[200px] overflow-hidden border-l p-5">
                 <div className="corner-mark" />
                 <div className="relative z-10 flex items-start justify-between"><div><div className="technical-label">Local weather</div>{weatherLoading ? <div className="live-loading-title"><span className="live-loading-orbit" />Reading local telemetry</div> : <h2 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{weather ? `${Math.round(weather.temperature)}°` : locationState === "locating" ? "—" : "Location"}</h2>}<p className="mt-1 max-w-[13rem] text-xs leading-relaxed text-cyan-50/56">{weather ? `${weather.condition} · Feels like ${Math.round(weather.apparentTemperature)}°` : weatherError ? "Weather relay is temporarily unavailable." : locationState === "denied" ? "Enable location access to receive weather telemetry." : "Locating your command environment…"}</p></div><button onClick={() => coordinates && void refreshWeather(coordinates)} disabled={!coordinates || weatherLoading} className="grid h-7 w-7 place-items-center text-cyan-200 transition-colors hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:text-cyan-100/25" aria-label="Refresh weather"><CloudSun size={22} /></button></div>
@@ -439,7 +470,7 @@ export default function Home() {
                 <div className="mt-4 space-y-3">
                   {headlinesLoading && <div className="live-news-loading" aria-label="Loading news data"><div className="live-news-scanline" /><span /><span /><span /></div>}
                   {headlinesError && <div className="flex items-center gap-2 text-xs text-amber-200"><WifiOff size={14} />News relay is temporarily unavailable.</div>}
-                  {headlines.slice(0, 2).map((headline) => <a key={headline.url} href={headline.url} target="_blank" rel="noreferrer" className="group block border-l border-cyan-300/25 pl-3 text-xs leading-relaxed text-cyan-50/76 transition-colors hover:border-cyan-200 hover:text-cyan-50"><span className="line-clamp-2">{headline.title}</span><span className="mt-1 flex items-center gap-1 font-mono text-[0.56rem] text-cyan-200/55">{headline.domain}<ExternalLink size={10} /></span></a>)}
+                  {headlines.map((headline, index) => <a key={headline.url} href={headline.url} target="_blank" rel="noreferrer" className={`${index >= 2 ? "headline-overflow " : ""}group block border-l border-cyan-300/25 pl-3 text-xs leading-relaxed text-cyan-50/76 transition-colors hover:border-cyan-200 hover:text-cyan-50`}><span className="line-clamp-2">{headline.title}</span><span className="mt-1 flex items-center gap-1 font-mono text-[0.56rem] text-cyan-200/55">{headline.domain}<ExternalLink size={10} /></span></a>)}
                 </div>
                 <span className="module-coordinate">NEWS · 10M</span>
               </section>
@@ -453,7 +484,7 @@ export default function Home() {
             </aside>
           </div>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="status-strip mt-5 grid gap-4 md:grid-cols-3">
             <div className="flex items-center gap-3 border-t border-cyan-100/10 pt-3"><Radio size={16} className="text-cyan-300" /><div><div className="technical-label">Network</div><div className="mt-0.5 text-xs text-cyan-50/68">Secure relay connected</div></div></div>
             <div className="flex items-center gap-3 border-t border-cyan-100/10 pt-3"><TimerReset size={16} className="text-cyan-300" /><div><div className="technical-label">Next reminder</div><div className="mt-0.5 text-xs text-cyan-50/68">No active countdowns</div></div></div>
             <div className="flex items-center gap-3 border-t border-cyan-100/10 pt-3"><Moon size={16} className="text-cyan-300" /><div><div className="technical-label">Ambient state</div><div className="mt-0.5 text-xs text-cyan-50/68">Focus mode engaged</div></div></div>
@@ -481,7 +512,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={coreFocusOpen} onOpenChange={setCoreFocusOpen}>
-        <DialogContent className="nexo-focus-dialog max-w-none border-0 bg-[#02080d] p-0 text-cyan-50 sm:max-w-[min(96vw,1120px)]" showCloseButton={false}>
+        <DialogContent className="nexo-focus-dialog max-w-none rounded-none border-0 bg-[#02080d] p-0 text-cyan-50 sm:max-w-none" showCloseButton={false}>
           <div className="nexo-focus-topbar"><div><div className="technical-label text-cyan-200/70">Immersive core / spatial control</div><div className="mt-1 text-sm text-cyan-50">Drag to orbit · Scroll or pinch to zoom</div></div><div className="flex items-center gap-2"><button onClick={() => setCoreSceneKey((key) => key + 1)} className="core-control core-control-large" aria-label="Reset immersive 3D core"><RotateCcw size={15} /></button><button onClick={() => setCoreFocusOpen(false)} className="core-control core-control-large" aria-label="Close immersive 3D core"><X size={16} /></button></div></div>
           {webglEnabled ? <Suspense fallback={<div className="nexo-focus-loading">Calibrating immersive scene…</div>}><NexoCore3D key={`focus-${coreSceneKey}`} state={assistantState} immersive /></Suspense> : <div className="nexo-focus-loading">The immersive WebGL scene is unavailable on this device. The command-bay fallback remains active.</div>}
         </DialogContent>
