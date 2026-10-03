@@ -9,6 +9,7 @@ import { startLogin } from "./const";
 import "./index.css";
 import "./nexo-redesign.css";
 import "./nexo-redesign-v2.css";
+import "./nexo-maximized.css";
 
 const queryClient = new QueryClient();
 

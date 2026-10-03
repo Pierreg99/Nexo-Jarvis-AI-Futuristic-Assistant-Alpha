@@ -1,0 +1,110 @@
+/* Nexo 2.0 — maximized layer: on desktop the command deck fills the viewport edge to edge and the core scales with the space it is given. */
+
+/* The WebGL scene carries its own circular mask, so the core controls at the stage edge are no longer clipped away. */
+.core-stage-webgl { contain: layout; }
+.core-stage-webgl > .nexo-webgl-scene,
+.core-stage-webgl > .core-webgl-loader {
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* The "CORE / LIVE" tag inherits inset and a 50% radius from the ring it replaced; pin it to a corner badge so its blur stops frosting the whole core. */
+.core-stage::before {
+  left: auto;
+  bottom: auto;
+  border-radius: 2px;
+}
+
+/* Immersive core: a true full-viewport scene instead of a centered card. */
+.nexo-focus-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  border-radius: 0;
+}
+.nexo-focus-dialog .nexo-webgl-scene,
+.nexo-focus-dialog .nexo-webgl-scene-immersive,
+.nexo-focus-dialog .nexo-focus-loading {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+.nexo-focus-topbar {
+  flex: none;
+  padding-top: max(0.9rem, env(safe-area-inset-top));
+}
+
+.headline-overflow { display: none; }
+
+/* Desktop: lock the deck to the viewport. Every region gives up space before the core does, and the core sizes itself from its container. */
+@media (min-width: 1280px) and (min-height: 760px) {
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+  }
+  .app-shell > header { flex: none; }
+
+  .command-deck-body {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  /* The status strip joins the heading row so the deck below can take the full remaining height. */
+  .command-deck-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: clamp(1.25rem, 2.5vw, 3rem);
+    min-height: 0;
+    padding-block: clamp(1rem, 2.4dvh, 1.75rem);
+  }
+  .command-deck-heading { grid-area: 1 / 1; align-self: end; }
+  .status-strip { grid-area: 1 / 2; align-self: end; margin: 0 0 1.25rem; }
+
+  .command-grid {
+    grid-area: 2 / 1 / 3 / -1;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 21vw, 440px);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .command-core-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .command-core-viewport {
+    flex: 1 1 auto;
+    min-height: 0;
+    container-type: size;
+  }
+  .command-core-viewport .core-stage {
+    width: min(100cqw - 1rem, 100cqh - 0.5rem);
+    min-width: 0;
+  }
+
+  .transcript-scroll { height: clamp(98px, 16dvh - 60px, 240px); }
+
+  .telemetry-rail {
+    min-height: 0;
+    overflow: hidden auto;
+    overscroll-behavior: contain;
+    grid-auto-rows: minmax(max-content, 1fr);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(50, 232, 255, 0.26) transparent;
+  }
+
+  .headline-overflow { display: block; }
+}
+
+/* Large monitors: scale type and rem-based spacing up so telemetry stays legible at distance. */
+@media (min-width: 2200px) and (min-height: 1200px) {
+  html { font-size: 112.5%; }
+  .command-deck-body > aside { width: 16rem; }
+}
