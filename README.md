@@ -1,64 +1,111 @@
 # Nexo Jarvis
 
-Nexo Jarvis ist eine futuristische persönliche Command-Bay-Oberfläche im Stil eines orbitalen Instrumentenpults. Die Anwendung kombiniert einen holografischen Nexo-Kern, Browser-Sprachsteuerung, lokale Befehlsverarbeitung sowie kompakte Live-Module für Wetter und Nachrichten.
+Eine persönliche Command-Bay mit orbitaler 3D-Oberfläche, Browser-Sprachsteuerung und einer gemeinsamen Ausführungsschicht für Browser und Node-Server. Befehle führen echte, validierte Aktionen aus; Ergebnisse und Fehler erscheinen in Conversation, Trace und Audit.
 
-> **Projektstatus:** Die visuelle Command-Bay und die Live-Module sind etabliert. Mit Nexo 2.0 kommt jetzt eine typisierte Agent-Ausführungsschicht mit Tools, Memory, Automationen, Permissions, Audit-Trace und CI hinzu.
+## Funktionen
 
-## Nexo 2.0
+- **Knowledge:** Notizen, Fakten und Präferenzen speichern, durchsuchen und löschen; Löschen lässt sich unmittelbar rückgängig machen.
+- **Timers & reminders:** Countdown-Timer mit sichtbarer Restzeit, einmalige und wiederkehrende Erinnerungen sowie Pause, Fortsetzen und Löschen.
+- **Notifications:** Abgelaufene Timer und Erinnerungen lesen und bestätigen; optionale Desktop-Benachrichtigungen bei geöffnetem Nexo.
+- **Terminal:** Ausgeführte Tools, Berechtigungen, Abschlussstatus und Fehler prüfen; Trace und Audit exportieren.
+- **System monitor:** Tatsächlicher Runtime-Status, aktive Aufgaben und Tool-Registry.
+- **Voice controls:** Englische/deutsche Spracherkennung, auswählbare Browser-Stimme, Geschwindigkeit und optionaler Sprachausgang.
+- **Settings:** Name, Read-only-Modus, manuelle Wetterkoordinaten und vollständiger Workspace-Export. Einstellungen bleiben im Browser gespeichert.
+- **Live data:** Open-Meteo-Wetter und aktuelle Nachrichten mit Hacker-News-Fallback; ungültige oder unsichere Nachrichtenlinks werden entfernt.
+- **AI conversation:** Optionaler OpenAI-kompatibler oder vorhandener Manus-Provider, mit jüngster Conversation und passenden gespeicherten Notizen als Kontext. API-Schlüssel bleiben auf dem Server.
+- **Orbital UI:** Lazy-loaded WebGL-Kern, vollständiger lokaler SVG/CSS-Fallback, Immersivansicht, Responsive Layout und Vollbild mit `F`.
 
-Die neue Ausführungsschicht liegt unter `server/nexo2/` und folgt dem Ablauf:
+## Schnellstart
 
-`Input → Intent → Tool Calls → Verification → Response → Audit Trace`
-
-Enthalten sind eine erweiterbare Tool-Registry, Permission-Gates für riskante Aktionen, Memory-Suche, Automation-Modelle und ein begrenzter Audit-Stream. Die bestehende Orbital-UI bleibt die Präsentationsschicht; die tRPC-Oberfläche unter `nexo2.*` stellt die Agent-Funktionen für das Frontend bereit.
-
-### Funktionen
-
-| Bereich | Status |
-| --- | --- |
-| Orbital Instrumentation UI | Umgesetzt |
-| 3D Nexo Core | Umgesetzt |
-| Maximiertes Vollbild-Layout | Umgesetzt |
-| Browser Voice | Umgesetzt |
-| Wetter / News | Umgesetzt |
-| Agent Trace | Nexo 2.0 Foundation |
-| Tool Registry | Nexo 2.0 Foundation |
-| Memory | Nexo 2.0 Foundation |
-| Automations | Nexo 2.0 Foundation |
-| Permission Gates | Nexo 2.0 Foundation |
-| Audit / Observability | Nexo 2.0 Foundation |
-| CI Quality Gate | Umgesetzt |
-| Externe Kalender | Bewusst noch autorisierungspflichtig |
-
-## Entwicklung
-
-Vorausgesetzt werden Node.js 22 oder eine kompatible aktuelle Node-Version sowie pnpm.
+Node.js **22+** und die in `package.json` festgelegte pnpm-Version verwenden. Corepack vermeidet Versionskonflikte mit global installiertem pnpm:
 
 ```bash
-pnpm install
-pnpm check
-pnpm test
-pnpm build
+corepack enable
+corepack pnpm install --frozen-lockfile
+cp .env.example .env
+corepack pnpm dev
 ```
 
-## Architektur
+Ohne API-Schlüssel, OAuth oder Datenbank funktionieren Notizen, Timer, Erinnerungen, Voice und öffentliche Live-Daten. Im Node-Betrieb wird ein isolierter Workspace über eine HttpOnly-Session zugeordnet; angemeldete Benutzer erhalten ihren eigenen Workspace.
 
-- `client/src/pages/Home.tsx` — Command-Bay und Live-Module
-- `client/src/index.css` — Orbital-Instrumentation-Design
-- `client/src/nexo-maximized.css` — Viewport-füllendes Desktop-Layout (ab 1280 × 760 px), mitskalierender Kern und randlose Immersivansicht; Vollbild per Header-Schalter oder Taste `F`
-- `server/routers.ts` — tRPC-Verträge für Live- und Nexo-2.0-Funktionen
-- `server/nexo2/agent.ts` — Agent-Orchestrierung
-- `server/nexo2/tools.ts` — Tool-Registry und Tool-Ausführung
-- `server/nexo2/memory.ts` — Memory-Primitive und Retrieval
-- `server/nexo2/automations.ts` — Automationsmodell
-- `server/nexo2/permissions.ts` — Berechtigungsmodell
-- `server/nexo2/audit.ts` — Audit-/Observability-Stream
-- `server/nexo2.test.ts` — Foundation-Regressionstests
+### Befehle
 
-## Sicherheitsprinzip
+| Beispiel                                | Wirkung                                        |
+| --------------------------------------- | ---------------------------------------------- |
+| `Remember: Review the launch checklist` | Notiz speichern                                |
+| `Merke dir: Wasser trinken`             | Deutsche Notiz speichern                       |
+| `Read my notes` / `Zeige meine Notizen` | Gespeicherte Notizen lesen                     |
+| `Find notes about launch`               | Inhalt und Tags durchsuchen                    |
+| `Set a 5 min timer for tea`             | Countdown mit Titel starten                    |
+| `Stelle einen Timer auf 5 Minuten`      | Deutschen Timer starten                        |
+| `Remind me in 1 hour to stretch`        | Einmaligen Countdown starten                   |
+| `Remind me every 30 minutes to stretch` | Wiederkehrende Erinnerung anlegen              |
+| `Show timers` / `Show reminders`        | Aktive Aufgaben auflisten                      |
+| `Cancel timer tea`                      | Timer über eindeutigen Titel oder ID abbrechen |
+| `Weather` / `News`                      | Echte aktuelle Daten lesen                     |
+| `System status` / `Summarize today`     | Runtime bzw. Workspace-Briefing lesen          |
+| `Help`                                  | Unterstützte Befehle anzeigen                  |
 
-Leseoperationen sind grundsätzlich `read`. Normale Schreiboperationen verwenden `write`. Hochriskante Tools werden als `high-risk` markiert und benötigen eine zusätzliche explizite Bestätigung, bevor eine Ausführung erfolgen darf.
+Timer unterstützen Sekunden, Minuten, Stunden und kombinierte Dauern bis sieben Tage. Einmalige Erinnerungen mit konkretem Datum sowie wiederkehrende Intervalle lassen sich im Modul **Timers & reminders** erstellen.
 
-## Bekannte Grenzen
+### Optionaler AI-Provider
 
-Memory und Automationen sind in dieser Foundation noch prozesslokal. Für Multi-User- und Produktionsbetrieb sollten sie in die vorhandene Drizzle-Datenbank persistiert werden. Externe Kalenderanbieter benötigen eine echte OAuth-/Connector-Konfiguration. Browser-Sprachfunktionen bleiben von den Fähigkeiten und Berechtigungen des verwendeten Browsers abhängig.
+Für einen persönlichen Server in `.env` konfigurieren:
+
+```dotenv
+OPENAI_API_KEY=your-server-side-key
+OPENAI_BASE_URL=https://api.openai.com/v1
+NEXO_AI_MODEL=gpt-4.1-mini
+```
+
+AI-Anfragen sind standardmäßig nur für angemeldete Benutzer verfügbar. Ein vertrauenswürdiger persönlicher Server ohne OAuth kann zusätzlich `NEXO_AI_ALLOW_GUESTS=true` setzen. Dies gibt allen Besuchern dieses Servers Zugriff auf den konfigurierten AI-Provider. Für öffentlich erreichbare Installationen authentifizierten Zugriff verwenden.
+
+Alternativ werden `BUILT_IN_FORGE_API_KEY` und `BUILT_IN_FORGE_API_URL` unterstützt. Bei AI-Anfragen werden die letzten Gesprächseinträge und passende Notizen an den konfigurierten Provider übertragen. Modellantworten lösen keine Tools oder externen Aktionen aus; Schreibaktionen erfolgen über explizite Befehle und validierte Eingaben.
+
+## Betrieb und Deployment
+
+### Node-Server
+
+```bash
+corepack pnpm check
+corepack pnpm test
+corepack pnpm build
+corepack pnpm start
+```
+
+Der Build verwendet standardmäßig `/` als Basis. `/api/health` meldet den Backend-Status. Der Browser erkennt das Backend automatisch und verwendet die Workspace-APIs unter `/api/trpc`.
+
+Workspaces werden atomar als JSON-Dateien unter `NEXO_DATA_DIR` (Standard: `.nexo-data/`) gespeichert. Dieses Verzeichnis auf einem persistenten Volume halten und sichern. Dateinamen werden aus der Benutzer-/Session-ID gehasht; Fehler beim Lesen oder Speichern werden gemeldet, ohne beschädigte Daten zu überschreiben. Der Scheduler lädt gespeicherte Workspaces beim Serverstart und verarbeitet fällige Aufgaben weiter. Diese Ablage ist für **einen Node-Prozess und persönliche Installationen** ausgelegt; für mehrere Replikas eine gemeinsame Datenbank und einen koordinierten Scheduler einsetzen.
+
+### GitHub Pages / statische Installation
+
+Die vorhandene Pages-Pipeline setzt automatisch `VITE_BASE_PATH=/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/`. Router, Favicon und lokale Assets respektieren diese Basis. Zum manuellen Bauen:
+
+```bash
+VITE_BASE_PATH=/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/ corepack pnpm build
+```
+
+Ohne Node-Backend verwendet Nexo dieselbe Befehlslogik mit `localStorage`. Notes, Conversation, Timer, Erinnerungen und Audit überleben Reloads im selben Browserprofil. GitHub Pages hostet keine Server-APIs und bietet allein keine AI-Provider-Verbindung.
+
+Browser-Erinnerungen benötigen eine laufende Seite. Geschlossene oder vom Betriebssystem pausierte Browser können nicht geweckt werden; verpasste Aufgaben werden beim nächsten Öffnen nachgeholt. Verpasste Wiederholungen erzeugen eine zusammengefasste Benachrichtigung und behalten ihren Zeitrhythmus. Benachrichtigungen werden in der eigenen Nexo-Oberfläche erzeugt; es werden keine E-Mails, Nachrichten oder externen Kalenderereignisse versendet.
+
+## Architektur und Berechtigungen
+
+`Input → Command plan → Validated tool calls → Result → Trace → Audit`
+
+- `shared/nexo/` — gemeinsame typisierte Command-, Tool-, Memory-, Timer- und Reminder-Engine
+- `shared/liveData.ts` — zentrale Wetter-/Nachrichtenabfragen mit Timeouts
+- `server/nexo2/runtime.ts` — isolierte persistente Workspaces und Scheduler
+- `server/nexo2/conversation.ts` — optionaler serverseitiger AI-Adapter
+- `server/routers.ts` — tRPC-Verträge
+- `client/src/hooks/useAssistant.ts` — Backend-Erkennung und Browser-/Server-Transport
+- `client/src/components/WorkspacePanels.tsx` — funktionsfähige Workspace-Module
+- `client/src/pages/Home.tsx` — Command-Bay, Live-Daten und Voice
+
+Tools haben `read`, `write` oder `high-risk` als Berechtigungsstufe. Read-only-Befehle können keine Notizen oder Aufgaben schreiben. Hochriskante registrierte Tools benötigen sowohl passende Berechtigung als auch zusätzliche explizite Bestätigung; öffentliche Agent-APIs akzeptieren ausschließlich `read` und `write`. Auch blockierte Tool-Ausführungen werden protokolliert. Gesprächs- und Audit-Historien sind begrenzt; bei voller Notizablage werden keine alten Notizen stillschweigend gelöscht.
+
+Externe Google-/Outlook-Kalender sind weiterhin nicht verbunden und benötigen eine tatsächliche Provider-/OAuth-Integration. Browser-Voice, Geolocation und Desktop-Notifications hängen vom Browser und dessen Berechtigungen ab.
+
+## Qualität
+
+Die GitHub-Quality-Pipeline prüft Installation mit Lockfile, TypeScript, Regressionstests und Produktionsbuild. Funktionstests decken echte Aktionen, Schreibschutz, Input-Validierung, persistente und isolierte Workspaces, Timer-Wiederaufnahme, Reminder-Rhythmus, Provider-Fehler und sichere Nachrichtenlinks ab.

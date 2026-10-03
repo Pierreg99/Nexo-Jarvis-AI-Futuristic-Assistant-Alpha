@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { startScheduler } from "../nexo2/runtime";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +37,9 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  app.get("/api/health", (_req, res) =>
+    res.json({ service: "nexo-jarvis", version: 2, mode: "server" })
+  );
   // tRPC API
   app.use(
     "/api/trpc",
@@ -43,6 +47,9 @@ async function startServer() {
       router: appRouter,
       createContext,
     })
+  );
+  app.use("/api", (_req, res) =>
+    res.status(404).json({ error: "API route not found" })
   );
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
@@ -59,6 +66,7 @@ async function startServer() {
   }
 
   server.listen(port, () => {
+    startScheduler();
     console.log(`Server running on http://localhost:${port}/`);
   });
 }

@@ -39,7 +39,9 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
   if (entries.length === 0) return;
   ensureLogDir();
   const logPath = path.join(LOG_DIR, `${source}.log`);
-  const lines = entries.map((entry) => `[${new Date().toISOString()}] ${JSON.stringify(entry)}`);
+  const lines = entries.map(
+    entry => `[${new Date().toISOString()}] ${JSON.stringify(entry)}`
+  );
   fs.appendFileSync(logPath, `${lines.join("\n")}\n`, "utf-8");
   trimLogFile(logPath, MAX_LOG_SIZE_BYTES);
 }
@@ -49,23 +51,38 @@ function vitePluginManusDebugCollector(): Plugin {
     name: "manus-debug-collector",
     transformIndexHtml(html) {
       if (process.env.NODE_ENV === "production") return html;
-      return { html, tags: [{ tag: "script", attrs: { src: "/__manus__/debug-collector.js", defer: true }, injectTo: "head" }] };
+      return {
+        html,
+        tags: [
+          {
+            tag: "script",
+            attrs: { src: "/__manus__/debug-collector.js", defer: true },
+            injectTo: "head",
+          },
+        ],
+      };
     },
     configureServer(server: ViteDevServer) {
       server.middlewares.use("/__manus__/logs", (req, res, next) => {
         if (req.method !== "POST") return next();
         const handlePayload = (payload: any) => {
-          if (payload.consoleLogs?.length > 0) writeToLogFile("browserConsole", payload.consoleLogs);
-          if (payload.networkRequests?.length > 0) writeToLogFile("networkRequests", payload.networkRequests);
-          if (payload.sessionEvents?.length > 0) writeToLogFile("sessionReplay", payload.sessionEvents);
+          if (payload.consoleLogs?.length > 0)
+            writeToLogFile("browserConsole", payload.consoleLogs);
+          if (payload.networkRequests?.length > 0)
+            writeToLogFile("networkRequests", payload.networkRequests);
+          if (payload.sessionEvents?.length > 0)
+            writeToLogFile("sessionReplay", payload.sessionEvents);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true }));
         };
         let body = "";
-        req.on("data", (chunk) => { body += chunk.toString(); });
+        req.on("data", chunk => {
+          body += chunk.toString();
+        });
         req.on("end", () => {
-          try { handlePayload(JSON.parse(body)); }
-          catch (error) {
+          try {
+            handlePayload(JSON.parse(body));
+          } catch (error) {
             res.writeHead(400, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ success: false, error: String(error) }));
           }
@@ -75,11 +92,17 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+];
 
 export default defineConfig({
   plugins,
-  base: "/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/",
+  base: process.env.VITE_BASE_PATH ?? "/",
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -97,8 +120,13 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: [
-      ".manuspre.computer", ".manus.computer", ".manus-asia.computer", ".manuscomputer.ai", ".manusvm.computer",
-      "localhost", "127.0.0.1",
+      ".manuspre.computer",
+      ".manus.computer",
+      ".manus-asia.computer",
+      ".manuscomputer.ai",
+      ".manusvm.computer",
+      "localhost",
+      "127.0.0.1",
     ],
     fs: { strict: true, deny: ["**/.*"] },
   },
