@@ -32,6 +32,8 @@ jobs:
       - run: pnpm check
       - run: pnpm test
       - run: pnpm build
+        env:
+          VITE_BASE_PATH: /Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist/public
