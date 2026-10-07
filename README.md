@@ -2,14 +2,20 @@
 
 <img src="./assets/readme-banner.svg" alt="Nexo-Jarvis-AI-Futuristic-Assistant-Alpha" width="100%">
 
-# Nexo-Jarvis-AI-Futuristic-Assistant-Alpha
+# Nexo Jarvis
 
-Futuristische, browserbasierte AI-Personal-Assistant-Dashboard-Oberfläche mit holografischem Kern, Voice-UI und HUD-Modulen.
-
-[![branch](https://img.shields.io/badge/branch-main-7EB8C9?style=flat-square)](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha)
-[![sichtbarkeit](https://img.shields.io/badge/sichtbarkeit-öffentlich-141414?style=flat-square&labelColor=0A0A0A)](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha)
-[![sprache](https://img.shields.io/badge/sprache-TypeScript-2A2A28?style=flat-square&labelColor=0A0A0A)](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha)
-
+<p><strong>Futuristische, browserbasierte AI-Assistant-Dashboard-Oberfläche mit holografischem Kern, Voice-UI und HUD-Modulen.</strong></p>
+<p>
+<img alt="TypeScript: 90%" src="https://img.shields.io/badge/TypeScript-90%25-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
+<img alt="CSS: 5%" src="https://img.shields.io/badge/CSS-5%25-1572B6?style=for-the-badge&logo=css3&logoColor=white">
+<img alt="JavaScript: 4%" src="https://img.shields.io/badge/JavaScript-4%25-F7DF1E?style=for-the-badge&logo=javascript&logoColor=white">
+<img alt="Sichtbarkeit: Öffentlich" src="https://img.shields.io/badge/Sichtbarkeit-%C3%96ffentlich-0B7285?style=for-the-badge">
+</p>
+<p>
+<a href="https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/deploy-pages.yml"><img alt="deploy-pages.yml" src="https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/deploy-pages.yml/badge.svg"></a>
+<a href="https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/quality.yml"><img alt="quality.yml" src="https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/quality.yml/badge.svg"></a>
+</p>
+<p><a href="#schnellstart">Schnellstart</a> · <a href="#projektstruktur">Projektstruktur</a> · <a href="#english-summary">English</a></p>
 </div>
 
 <table>
@@ -39,23 +45,173 @@ Der Default-Branch `main` ist die Fläche, die zählt. Was nicht in diesem Baum 
 </tr>
 </table>
 
-## Lesen
+---
 
-1. Default-Branch öffnen.
-2. Nur Dateien in diesem Baum als Beleg nehmen.
-3. Issues und Diskussionen nur nutzen, wenn sie im Repo eingeschaltet sind.
+## Inhaltsverzeichnis
 
-## Grenze
+- [Bestand und Fakten](#bestand)
+- [Überblick](#überblick)
+- [Features](#features)
+- [Schnellstart](#schnellstart)
+- [Architektur](#architektur)
+- [Projektstruktur](#projektstruktur)
+- [Dokumentation](#dokumentation)
+- [Projektdetails](#projektdetails)
+- [English summary](#english-summary)
 
-Keine Qualitätszahl, kein Paketstand und keine Runtime, die nicht als Datei in diesem Repo steht.
+## Überblick
 
-<p align="center"><sub>Fläche nach Cryo Core Lite v1.5 · Tokens #0A0A0A / #141414 / #7EB8C9</sub></p>
+Futuristische, browserbasierte AI-Assistant-Dashboard-Oberfläche mit holografischem Kern, Voice-UI und HUD-Modulen.
 
+| Merkmal | Wert |
+| --- | --- |
+| Sprachen | TypeScript (90%), CSS (5%), JavaScript (4%) |
+| Dateien im Repository | 185 |
+| Version (`package.json`) | 1.0.0 |
+| CI-Workflows | 2 |
+
+## Features
+
+- 3D-Rendering mit Three.js
+- Deklarative 3D-Szenen mit React Three Fiber
+- Benutzeroberfläche mit React
+- Entwicklungsserver und Build mit Vite
+- Styling mit Tailwind CSS
+- Datenzugriff über Drizzle ORM
+- HTTP-Server mit Express
+- Animationen mit Framer Motion
+- Schema-Validierung mit Zod
+- Tests mit Vitest
+- Typprüfung mit TypeScript
+- WebGL2-Rendering
+- Lokale Speicherung im Browser (localStorage)
+- Sprachein- oder -ausgabe über die Web Speech API
+- Echtzeit-Render-Schleife (requestAnimationFrame)
+- Automatisierung über GitHub Actions: `deploy-pages.yml`, `quality.yml`
+- Veröffentlichung über GitHub Pages
+- 7 Testdateien im Repository
+- 26 Markdown-Dokumente
+
+## Schnellstart
+
+```bash
+git clone https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha.git
+cd Nexo-Jarvis-AI-Futuristic-Assistant-Alpha
+```
+
+**Node.js**
+
+```bash
+pnpm install
+pnpm dev
+pnpm start
+pnpm build
+pnpm test
+pnpm check
+```
 
 <details>
-<summary>Bisheriger README-Text</summary>
+<summary>Alle Skripte aus <code>package.json</code></summary>
 
-# Nexo Jarvis
+| Skript | Befehl |
+| --- | --- |
+| `dev` | `NODE_ENV=development tsx watch server/_core/index.ts` |
+| `build` | `vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundl...` |
+| `start` | `NODE_ENV=production node dist/index.js` |
+| `check` | `tsc --noEmit` |
+| `format` | `prettier --write .` |
+| `test` | `vitest run` |
+| `db:push` | `drizzle-kit generate && drizzle-kit migrate` |
+
+</details>
+
+## Architektur
+
+Übersicht der wichtigsten Verzeichnisse nach Anzahl der enthaltenen Dateien.
+
+```mermaid
+flowchart LR
+    R(["Nexo-Jarvis-AI-Futuristic-Assistant-Alpha"])
+    R --> D0["client/<br/>86 Dateien"]
+    R --> D1["server/<br/>42 Dateien"]
+    R --> D2["shared/<br/>9 Dateien"]
+    R --> D3["drizzle/<br/>4 Dateien"]
+    R --> D4["assets/<br/>1 Datei"]
+    R --> D5["patches/<br/>1 Datei"]
+    CI[["GitHub Actions<br/>2 Workflows"]] -.-> R
+```
+
+## Projektstruktur
+
+```text
+Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/
+├── .github/  (2 Dateien)
+│   └── workflows/
+├── assets/  (1 Datei)
+│   └── readme-banner.svg
+├── client/  (86 Dateien)
+│   ├── public/
+│   ├── src/
+│   └── index.html
+├── drizzle/  (4 Dateien)
+│   ├── meta/
+│   ├── migrations/
+│   ├── relations.ts
+│   └── schema.ts
+├── patches/  (1 Datei)
+│   └── wouter@3.7.1.patch
+├── server/  (42 Dateien)
+│   ├── _core/
+│   ├── nexo2/
+│   ├── assistant.behavior.test.ts
+│   ├── auth.logout.test.ts
+│   ├── core3d.styles.test.ts
+│   ├── db.ts
+│   └── … (8 weitere)
+├── shared/  (9 Dateien)
+│   ├── _core/
+│   ├── nexo/
+│   ├── const.ts
+│   ├── liveData.ts
+│   └── types.ts
+├── .gitignore
+├── animation_check.md
+├── CHANGELOG.md
+├── components.json
+├── core3d_check.md
+├── drizzle.config.ts
+├── ideas.md
+├── live_data_sources.md
+├── NEXO2_API.md
+├── NEXO2_APPROVAL.md
+├── NEXO2_BRANCH_READY.md
+├── NEXO2_COMPLETE.md
+├── NEXO2_DONE.md
+├── NEXO2_FINAL.md
+├── NEXO2_FINALIZED.md
+└── … (20 weitere Einträge)
+```
+
+## Dokumentation
+
+- [animation_check.md](animation_check.md)
+- [CHANGELOG.md](CHANGELOG.md)
+- [core3d_check.md](core3d_check.md)
+- [ideas.md](ideas.md)
+- [live_data_sources.md](live_data_sources.md)
+- [NEXO2_API.md](NEXO2_API.md)
+- [NEXO2_APPROVAL.md](NEXO2_APPROVAL.md)
+- [NEXO2_BRANCH_READY.md](NEXO2_BRANCH_READY.md)
+- [NEXO2_COMPLETE.md](NEXO2_COMPLETE.md)
+- [NEXO2_DONE.md](NEXO2_DONE.md)
+- [NEXO2_FINAL.md](NEXO2_FINAL.md)
+- [NEXO2_FINALIZED.md](NEXO2_FINALIZED.md)
+- [NEXO2_HEAD.md](NEXO2_HEAD.md)
+- [NEXO2_INTEGRATION_STATUS.md](NEXO2_INTEGRATION_STATUS.md)
+
+## Projektdetails
+
+Der folgende Abschnitt übernimmt die bisherige Projektdokumentation.
 
 Eine persönliche Command-Bay mit orbitaler 3D-Oberfläche, Browser-Sprachsteuerung und einer gemeinsamen Ausführungsschicht für Browser und Node-Server. Befehle führen echte, validierte Aktionen aus; Ergebnisse und Fehler erscheinen in Conversation, Trace und Audit.
 
@@ -161,8 +317,14 @@ Browser-Erinnerungen benötigen eine laufende Seite. Geschlossene oder vom Betri
 
 Tools haben `read`, `write` oder `high-risk` als Berechtigungsstufe. Read-only-Befehle können keine Notizen oder Aufgaben schreiben. Hochriskante registrierte Tools benötigen sowohl passende Berechtigung als auch zusätzliche explizite Bestätigung; öffentliche Agent-APIs akzeptieren ausschließlich `read` und `write`. Auch blockierte Tool-Ausführungen werden protokolliert. Gesprächs- und Audit-Historien sind begrenzt; bei voller Notizablage werden keine alten Notizen stillschweigend gelöscht.
 
-Externe Google-/Outlook-Kalender sind weiterhin nicht verbunden und benötigen eine tatsächliche Provider-/OAuth-Integration. Brow
+Externe Google-/Outlook-Kalender sind weiterhin nicht verbunden und benötigen eine tatsächliche Provider-/OAuth-Integration. Browser-Voice, Geolocation und Desktop-Notifications hängen vom Browser und dessen Berechtigungen ab.
 
-… gekürzt, Original bleibt in der Git-Historie.
+## Qualität
 
-</details>
+Die GitHub-Quality-Pipeline prüft Installation mit Lockfile, TypeScript, Regressionstests und Produktionsbuild. Funktionstests decken echte Aktionen, Schreibschutz, Input-Validierung, persistente und isolierte Workspaces, Timer-Wiederaufnahme, Reminder-Rhythmus, Provider-Fehler und sichere Nachrichtenlinks ab.
+
+## English summary
+
+Futuristic browser-based AI assistant dashboard with holographic core, voice UI and HUD modules.
+
+Clone the repository and follow the commands in [Schnellstart](#schnellstart); the [project layout](#projektstruktur) shows where the code lives. Further documents are listed under [Dokumentation](#dokumentation).
