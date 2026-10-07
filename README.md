@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./assets/readme-banner.svg" alt="Nexo-Jarvis-AI-Futuristic-Assistant-Alpha" width="100%">
+
 # Nexo Jarvis
 
 <p><strong>Futuristische, browserbasierte AI-Assistant-Dashboard-Oberfläche mit holografischem Kern, Voice-UI und HUD-Modulen.</strong></p>
@@ -16,10 +18,38 @@
 <p><a href="#schnellstart">Schnellstart</a> · <a href="#projektstruktur">Projektstruktur</a> · <a href="#english-summary">English</a></p>
 </div>
 
+<table>
+<tr>
+<td width="58%" valign="top">
+
+### Bestand
+
+Futuristische, browserbasierte AI-Personal-Assistant-Dashboard-Oberfläche mit holografischem Kern, Voice-UI und HUD-Modulen.
+
+Der Default-Branch `main` ist die Fläche, die zählt. Was nicht in diesem Baum liegt, ist kein Feature dieses Repos.
+
+</td>
+<td width="42%" valign="top">
+
+### Fakten
+
+| Feld | Wert |
+| --- | --- |
+| Owner | Pierreg99 |
+| Branch | `main` |
+| Sichtbarkeit | öffentlich |
+| Sprache | TypeScript |
+| Archiv | nein |
+
+</td>
+</tr>
+</table>
+
 ---
 
 ## Inhaltsverzeichnis
 
+- [Bestand und Fakten](#bestand)
 - [Überblick](#überblick)
 - [Features](#features)
 - [Schnellstart](#schnellstart)
@@ -36,7 +66,7 @@ Futuristische, browserbasierte AI-Assistant-Dashboard-Oberfläche mit holografis
 | Merkmal | Wert |
 | --- | --- |
 | Sprachen | TypeScript (90%), CSS (5%), JavaScript (4%) |
-| Dateien im Repository | 184 |
+| Dateien im Repository | 185 |
 | Version (`package.json`) | 1.0.0 |
 | CI-Workflows | 2 |
 
@@ -106,7 +136,8 @@ flowchart LR
     R --> D1["server/<br/>42 Dateien"]
     R --> D2["shared/<br/>9 Dateien"]
     R --> D3["drizzle/<br/>4 Dateien"]
-    R --> D4["patches/<br/>1 Datei"]
+    R --> D4["assets/<br/>1 Datei"]
+    R --> D5["patches/<br/>1 Datei"]
     CI[["GitHub Actions<br/>2 Workflows"]] -.-> R
 ```
 
@@ -116,6 +147,8 @@ flowchart LR
 Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/
 ├── .github/  (2 Dateien)
 │   └── workflows/
+├── assets/  (1 Datei)
+│   └── readme-banner.svg
 ├── client/  (86 Dateien)
 │   ├── public/
 │   ├── src/
@@ -156,8 +189,7 @@ Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/
 ├── NEXO2_DONE.md
 ├── NEXO2_FINAL.md
 ├── NEXO2_FINALIZED.md
-├── NEXO2_HEAD.md
-└── … (19 weitere Einträge)
+└── … (20 weitere Einträge)
 ```
 
 ## Dokumentation
