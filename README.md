@@ -1,3 +1,60 @@
+<div align="center">
+
+<img src="./assets/readme-banner.svg" alt="Nexo-Jarvis-AI-Futuristic-Assistant-Alpha" width="100%">
+
+# Nexo-Jarvis-AI-Futuristic-Assistant-Alpha
+
+Futuristische, browserbasierte AI-Personal-Assistant-Dashboard-Oberfläche mit holografischem Kern, Voice-UI und HUD-Modulen.
+
+[![branch](https://img.shields.io/badge/branch-main-7EB8C9?style=flat-square)](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha)
+[![sichtbarkeit](https://img.shields.io/badge/sichtbarkeit-öffentlich-141414?style=flat-square&labelColor=0A0A0A)](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha)
+[![sprache](https://img.shields.io/badge/sprache-TypeScript-2A2A28?style=flat-square&labelColor=0A0A0A)](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha)
+
+</div>
+
+<table>
+<tr>
+<td width="58%" valign="top">
+
+### Bestand
+
+Futuristische, browserbasierte AI-Personal-Assistant-Dashboard-Oberfläche mit holografischem Kern, Voice-UI und HUD-Modulen.
+
+Der Default-Branch `main` ist die Fläche, die zählt. Was nicht in diesem Baum liegt, ist kein Feature dieses Repos.
+
+</td>
+<td width="42%" valign="top">
+
+### Fakten
+
+| Feld | Wert |
+| --- | --- |
+| Owner | Pierreg99 |
+| Branch | `main` |
+| Sichtbarkeit | öffentlich |
+| Sprache | TypeScript |
+| Archiv | nein |
+
+</td>
+</tr>
+</table>
+
+## Lesen
+
+1. Default-Branch öffnen.
+2. Nur Dateien in diesem Baum als Beleg nehmen.
+3. Issues und Diskussionen nur nutzen, wenn sie im Repo eingeschaltet sind.
+
+## Grenze
+
+Keine Qualitätszahl, kein Paketstand und keine Runtime, die nicht als Datei in diesem Repo steht.
+
+<p align="center"><sub>Fläche nach Cryo Core Lite v1.5 · Tokens #0A0A0A / #141414 / #7EB8C9</sub></p>
+
+
+<details>
+<summary>Bisheriger README-Text</summary>
+
 # Nexo Jarvis
 
 Eine persönliche Command-Bay mit orbitaler 3D-Oberfläche, Browser-Sprachsteuerung und einer gemeinsamen Ausführungsschicht für Browser und Node-Server. Befehle führen echte, validierte Aktionen aus; Ergebnisse und Fehler erscheinen in Conversation, Trace und Audit.
@@ -104,8 +161,8 @@ Browser-Erinnerungen benötigen eine laufende Seite. Geschlossene oder vom Betri
 
 Tools haben `read`, `write` oder `high-risk` als Berechtigungsstufe. Read-only-Befehle können keine Notizen oder Aufgaben schreiben. Hochriskante registrierte Tools benötigen sowohl passende Berechtigung als auch zusätzliche explizite Bestätigung; öffentliche Agent-APIs akzeptieren ausschließlich `read` und `write`. Auch blockierte Tool-Ausführungen werden protokolliert. Gesprächs- und Audit-Historien sind begrenzt; bei voller Notizablage werden keine alten Notizen stillschweigend gelöscht.
 
-Externe Google-/Outlook-Kalender sind weiterhin nicht verbunden und benötigen eine tatsächliche Provider-/OAuth-Integration. Browser-Voice, Geolocation und Desktop-Notifications hängen vom Browser und dessen Berechtigungen ab.
+Externe Google-/Outlook-Kalender sind weiterhin nicht verbunden und benötigen eine tatsächliche Provider-/OAuth-Integration. Brow
 
-## Qualität
+… gekürzt, Original bleibt in der Git-Historie.
 
-Die GitHub-Quality-Pipeline prüft Installation mit Lockfile, TypeScript, Regressionstests und Produktionsbuild. Funktionstests decken echte Aktionen, Schreibschutz, Input-Validierung, persistente und isolierte Workspaces, Timer-Wiederaufnahme, Reminder-Rhythmus, Provider-Fehler und sichere Nachrichtenlinks ab.
+</details>
