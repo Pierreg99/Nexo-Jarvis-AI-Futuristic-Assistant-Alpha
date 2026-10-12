@@ -8,6 +8,7 @@ import {
   timerInputSchema,
 } from "./schemas";
 import { newId, WorkspaceStore } from "./store";
+import { translate, translateError, type Language } from "../i18n";
 import type {
   AgentContext,
   AgentTrace,
@@ -57,7 +58,8 @@ export type AssistantOptions = {
   conversation?: (
     input: string,
     history: ConversationRecord[],
-    memory: MemoryRecord[]
+    memory: MemoryRecord[],
+    language: Language
   ) => Promise<string>;
 };
 
@@ -82,8 +84,8 @@ export class Assistant {
       name: "assistant.help",
       description: "List supported commands.",
       permission: "read",
-      inputSchema: z.object({}),
-      execute: async () => help,
+      inputSchema: z.object({ language: z.enum(["en", "de"]).default("en") }),
+      execute: async ({ language }) => translate(language, help),
     });
     this.registerTool({
       name: "memory.capture",
@@ -195,19 +197,26 @@ export class Assistant {
       description:
         "Answer using the configured AI provider, or explain available local functions.",
       permission: "read",
-      inputSchema: z.object({ input: z.string().trim().min(1).max(4000) }),
-      execute: async ({ input }) => {
+      inputSchema: z.object({
+        input: z.string().trim().min(1).max(4000),
+        language: z.enum(["en", "de"]).default("en"),
+      }),
+      execute: async ({ input, language }) => {
         if (options.conversation)
           return (
             await options.conversation(
               input,
               this.store.read().conversation.slice(-20),
-              this.searchMemory(input, 5)
+              this.searchMemory(input, 5),
+              language
             )
           ).slice(0, 16000);
         if (/\b(joke|witz)\b/i.test(input))
-          return "Why did the algorithm stay calm? It had already considered the edge cases.";
-        return `I can manage your notes, timers and reminders, and read live weather and news. For open-ended AI conversation, connect a server with an AI provider in Settings. ${help}`;
+          return translate(
+            language,
+            "Why did the algorithm stay calm? It had already considered the edge cases."
+          );
+        return `${translate(language, "I can manage your notes, timers and reminders, and read live weather and news. For open-ended AI conversation, connect a server with an AI provider in Settings.")} ${translate(language, help)}`;
       },
     });
   }
@@ -580,7 +589,11 @@ export class Assistant {
         error instanceof Error
           ? error.message.slice(0, 1000)
           : "Execution failed";
-      response = `Execution blocked: ${trace.error}`;
+      response = translate(
+        context.language ?? "en",
+        "Execution blocked: {error}",
+        { error: translateError(context.language ?? "en", trace.error) }
+      );
     }
     trace.completedAt = this.now().toISOString();
     this.store.update(state => {

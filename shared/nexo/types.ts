@@ -98,4 +98,5 @@ export type Workspace = {
 };
 export type AgentContext = {
   coordinates?: { latitude: number; longitude: number };
+  language?: import("../i18n").Language;
 };

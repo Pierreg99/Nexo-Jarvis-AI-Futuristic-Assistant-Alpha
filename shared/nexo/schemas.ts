@@ -44,6 +44,7 @@ export const coordinatesSchema = z.object({
   longitude: z.number().min(-180).max(180),
 });
 export const commandSchema = z.object({
+  language: z.enum(["en", "de"]).default("en"),
   input: z.string().trim().min(1).max(4000),
   granted: z.enum(["read", "write"]).default("write"),
   coordinates: coordinatesSchema.optional(),

@@ -98,7 +98,7 @@ export const appRouter = router({
           const result = await ctx.assistant.runAgent(
             input.input,
             input.granted,
-            { coordinates: input.coordinates }
+            { coordinates: input.coordinates, language: input.language }
           );
           return {
             ...result,
