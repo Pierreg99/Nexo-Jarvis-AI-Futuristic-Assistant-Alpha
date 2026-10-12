@@ -10,6 +10,7 @@ import "./index.css";
 import "./nexo-redesign.css";
 import "./nexo-redesign-v2.css";
 import "./nexo-maximized.css";
+import "./nexo-polish.css";
 
 const queryClient = new QueryClient();
 

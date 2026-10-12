@@ -13,6 +13,8 @@ import type { useAssistant } from "@/hooks/useAssistant";
 import type { Preferences } from "@/hooks/usePreferences";
 import { durationSeconds } from "@shared/nexo/commands";
 import type { MemoryRecord } from "@shared/nexo/types";
+import { useI18n } from "@/contexts/LanguageContext";
+import LanguageSwitch from "@/components/LanguageSwitch";
 
 export type WorkspaceModule =
   | "command"
@@ -69,6 +71,7 @@ export default function WorkspacePanels({
   onCoordinates,
   now,
 }: Props) {
+  const { t, date, schedule, errorText, notificationText } = useI18n();
   const [search, setSearch] = useState("");
   const [note, setNote] = useState("");
   const [kind, setKind] = useState<MemoryRecord["kind"]>("note");
@@ -112,16 +115,16 @@ export default function WorkspacePanels({
       await execute(
         "memory.capture",
         { content: note, kind, importance: 5, tags: [] },
-        "Note saved"
+        t("Note saved")
       )
     )
       setNote("");
   };
   const deleteNote = async (record: MemoryRecord) => {
     if (await execute("memory.delete", { id: record.id }))
-      toast("Note deleted", {
+      toast(t("Note deleted"), {
         action: {
-          label: "Undo",
+          label: t("Undo"),
           onClick: () => {
             void execute("memory.capture", {
               content: record.content,
@@ -138,16 +141,20 @@ export default function WorkspacePanels({
     const seconds = durationSeconds(duration);
     if (!seconds) {
       toast.error(
-        "Use a duration such as 5 min, 1 hour or 30 seconds (up to 7 days)."
+        t("Use a duration such as 5 min, 1 hour or 30 seconds (up to 7 days).")
       );
       return;
     }
-    void execute("task.timer", { title: timerTitle, seconds }, "Timer started");
+    void execute(
+      "task.timer",
+      { title: timerTitle, seconds },
+      t("Timer started")
+    );
   };
   const saveReminder = async (event: FormEvent) => {
     event.preventDefault();
     if (oneTime && (!at || !Number.isFinite(new Date(at).getTime()))) {
-      toast.error("Choose a reminder time.");
+      toast.error(t("Choose a reminder time."));
       return;
     }
     const schedule = oneTime ? new Date(at).toISOString() : `every ${minutes}m`;
@@ -160,7 +167,7 @@ export default function WorkspacePanels({
           schedule,
           enabled: true,
         },
-        "Reminder created"
+        t("Reminder created")
       )
     )
       setReminder("");
@@ -174,7 +181,7 @@ export default function WorkspacePanels({
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const testVoice = () => {
     if (!("speechSynthesis" in window)) {
-      toast.error("Speech output is unavailable in this browser.");
+      toast.error(t("Speech output is unavailable in this browser."));
       return;
     }
     window.speechSynthesis.cancel();
@@ -197,13 +204,13 @@ export default function WorkspacePanels({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-h-[85dvh] overflow-y-auto border-cyan-200/25 bg-[#071319] text-cyan-50 sm:max-w-3xl">
+      <DialogContent className="workspace-dialog max-h-[85dvh] overflow-y-auto border-cyan-200/25 bg-[#071319] text-cyan-50 sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{titles[module]}</DialogTitle>
+          <DialogTitle>{t(titles[module])}</DialogTitle>
           <DialogDescription className="text-cyan-100/55">
             {assistant.mode === "server"
-              ? "Connected workspace · changes are saved on your server."
-              : "Personal workspace · saved in this browser."}
+              ? t("Connected workspace · changes are saved on your server.")
+              : t("Personal workspace · saved in this browser.")}
           </DialogDescription>
         </DialogHeader>
         {assistant.error && (
@@ -211,15 +218,17 @@ export default function WorkspacePanels({
             role="alert"
             className="border border-amber-300/30 p-3 text-sm text-amber-100"
           >
-            {assistant.error}
+            {errorText(assistant.error)}
             <button onClick={assistant.clearError} className="ml-3 underline">
-              Dismiss
+              {t("Dismiss")}
             </button>
           </div>
         )}
         {preferences.readOnly && (
           <p className="text-xs text-amber-100">
-            Read-only mode is enabled. Turn it off in Settings to save changes.
+            {t(
+              "Read-only mode is enabled. Turn it off in Settings to save changes."
+            )}
           </p>
         )}
 
@@ -227,7 +236,7 @@ export default function WorkspacePanels({
           <div className="space-y-5">
             <form onSubmit={saveNote} className="space-y-3">
               <label className="block text-xs">
-                New note
+                {t("New note")}
                 <textarea
                   value={note}
                   onChange={event => setNote(event.target.value)}
@@ -235,12 +244,12 @@ export default function WorkspacePanels({
                   required
                   rows={3}
                   className={`${field} mt-2`}
-                  placeholder="Capture a note, fact or preference…"
+                  placeholder={t("Capture a note, fact or preference…")}
                 />
               </label>
               <div className="flex items-center gap-3">
                 <label className="text-xs">
-                  Type
+                  {t("Type")}
                   <select
                     value={kind}
                     onChange={event =>
@@ -249,12 +258,14 @@ export default function WorkspacePanels({
                     className={`${field} ml-2 w-auto`}
                   >
                     {["note", "fact", "preference", "task"].map(value => (
-                      <option key={value}>{value}</option>
+                      <option key={value} value={value}>
+                        {t(value)}
+                      </option>
                     ))}
                   </select>
                 </label>
                 <button className={button} disabled={disabled || !note.trim()}>
-                  Save note
+                  {t("Save note")}
                 </button>
               </div>
             </form>
@@ -264,12 +275,12 @@ export default function WorkspacePanels({
                 value={search}
                 onChange={event => setSearch(event.target.value)}
                 className={field}
-                placeholder="Search notes and tags…"
-                aria-label="Search saved notes"
+                placeholder={t("Search notes and tags…")}
+                aria-label={t("Search saved notes")}
               />
             </label>
             <p className="technical-label">
-              {notes.length} / {state.memory.length} notes
+              {notes.length} / {state.memory.length} {t("notes")}
             </p>
             <div className="space-y-3">
               {notes.map(record => (
@@ -279,14 +290,16 @@ export default function WorkspacePanels({
                 >
                   <div className="flex items-center justify-between">
                     <span className="technical-label">
-                      {record.kind} ·{" "}
-                      {new Date(record.updatedAt).toLocaleDateString()}
+                      {t(record.kind)} ·{" "}
+                      {date(record.updatedAt, { dateStyle: "medium" })}
                     </span>
                     <button
                       onClick={() => void deleteNote(record)}
                       disabled={disabled}
                       className={button}
-                      aria-label={`Delete note: ${record.content.slice(0, 40)}`}
+                      aria-label={t("Delete note: {content}", {
+                        content: record.content.slice(0, 40),
+                      })}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -304,8 +317,8 @@ export default function WorkspacePanels({
               {!notes.length && (
                 <p className="text-sm text-cyan-100/50">
                   {search
-                    ? "No notes match your search."
-                    : "Your saved notes will appear here."}
+                    ? t("No notes match your search.")
+                    : t("Your saved notes will appear here.")}
                 </p>
               )}
             </div>
@@ -319,7 +332,7 @@ export default function WorkspacePanels({
               className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
             >
               <label className="text-xs">
-                Timer title
+                {t("Timer title")}
                 <input
                   value={timerTitle}
                   onChange={event => setTimerTitle(event.target.value)}
@@ -329,17 +342,17 @@ export default function WorkspacePanels({
                 />
               </label>
               <label className="text-xs">
-                Duration
+                {t("Duration")}
                 <input
                   value={duration}
                   onChange={event => setDuration(event.target.value)}
                   required
                   className={`${field} mt-2`}
-                  placeholder="5 min"
+                  placeholder={t("5 min")}
                 />
               </label>
               <button disabled={disabled} className={`${button} self-end`}>
-                Start timer
+                {t("Start timer")}
               </button>
             </form>
             <div className="space-y-2">
@@ -354,7 +367,9 @@ export default function WorkspacePanels({
                       <div className="text-sm">{timer.title}</div>
                       <div
                         className="mt-1 font-mono text-xl text-cyan-200"
-                        aria-label={`Countdown for ${timer.title}`}
+                        aria-label={t("Countdown for {title}", {
+                          title: timer.title,
+                        })}
                       >
                         {countdown(timer.dueAt, now)}
                       </div>
@@ -366,13 +381,13 @@ export default function WorkspacePanels({
                       }
                       className={button}
                     >
-                      Cancel
+                      {t("Cancel")}
                     </button>
                   </div>
                 ))}
               {!state.timers.some(item => item.status === "active") && (
                 <p className="text-xs text-cyan-100/50">
-                  No active countdowns.
+                  {t("No active countdowns.")}
                 </p>
               )}
             </div>
@@ -381,14 +396,14 @@ export default function WorkspacePanels({
               className="space-y-3 border-t border-cyan-100/15 pt-5"
             >
               <label className="block text-xs">
-                Reminder
+                {t("Reminder")}
                 <input
                   value={reminder}
                   onChange={event => setReminder(event.target.value)}
                   maxLength={1000}
                   required
                   className={`${field} mt-2`}
-                  placeholder="Stretch, drink water, review notes…"
+                  placeholder={t("Stretch, drink water, review notes…")}
                 />
               </label>
               <label className="flex items-center gap-2 text-xs">
@@ -397,12 +412,12 @@ export default function WorkspacePanels({
                   checked={oneTime}
                   onChange={event => setOneTime(event.target.checked)}
                 />
-                One-time reminder
+                {t("One-time reminder")}
               </label>
               <div className="flex items-end gap-3">
                 {oneTime ? (
                   <label className="flex-1 text-xs">
-                    Local date and time
+                    {t("Local date and time")}
                     <input
                       type="datetime-local"
                       value={at}
@@ -413,7 +428,7 @@ export default function WorkspacePanels({
                   </label>
                 ) : (
                   <label className="flex-1 text-xs">
-                    Repeat every (minutes)
+                    {t("Repeat every (minutes)")}
                     <input
                       type="number"
                       min={1}
@@ -427,14 +442,14 @@ export default function WorkspacePanels({
                   </label>
                 )}
                 <button disabled={disabled} className={button}>
-                  Create reminder
+                  {t("Create reminder")}
                 </button>
               </div>
             </form>
             <p className="text-xs leading-relaxed text-cyan-100/55">
-              Reminders appear while Nexo is running. Browser reminders catch up
-              when you reopen the page; they cannot wake a closed browser. The
-              server continues scheduling while its process is running.
+              {t(
+                "Reminders appear while Nexo is running. Browser reminders catch up when you reopen the page; they cannot wake a closed browser. The server continues scheduling while its process is running."
+              )}
             </p>
             <div className="space-y-3">
               {state.automations.map(item => (
@@ -445,12 +460,10 @@ export default function WorkspacePanels({
                   <div className="min-w-0">
                     <p className="break-words text-sm">{item.prompt}</p>
                     <p className="mt-1 text-xs text-cyan-100/50">
-                      {item.enabled ? "Enabled" : "Paused"} ·{" "}
-                      {item.schedule.startsWith("every ")
-                        ? item.schedule
-                        : new Date(item.schedule).toLocaleString()}
+                      {item.enabled ? t("Enabled") : t("Paused")} ·{" "}
+                      {schedule(item.schedule)}
                       {item.nextRun &&
-                        ` · Next ${new Date(item.nextRun).toLocaleString()}`}
+                        ` · ${t("Next {time}", { time: date(item.nextRun) })}`}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-2">
@@ -463,7 +476,10 @@ export default function WorkspacePanels({
                         })
                       }
                       className={button}
-                      aria-label={`${item.enabled ? "Pause" : "Resume"} ${item.name}`}
+                      aria-label={t(
+                        item.enabled ? "Pause {name}" : "Resume {name}",
+                        { name: item.name }
+                      )}
                     >
                       {item.enabled ? <Pause size={14} /> : <Play size={14} />}
                     </button>
@@ -473,7 +489,9 @@ export default function WorkspacePanels({
                         void execute("automation.delete", { id: item.id })
                       }
                       className={button}
-                      aria-label={`Delete reminder ${item.name}`}
+                      aria-label={t("Delete reminder {name}", {
+                        name: item.name,
+                      })}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -494,7 +512,7 @@ export default function WorkspacePanels({
                   onCommand("System status");
                 }}
               >
-                Run status check
+                {t("Run status check")}
               </button>
               <button
                 className={button}
@@ -506,7 +524,7 @@ export default function WorkspacePanels({
                 }
               >
                 <Download size={14} />
-                Export trace
+                {t("Export trace")}
               </button>
             </div>
             {state.traces
@@ -518,13 +536,13 @@ export default function WorkspacePanels({
                   className="border border-cyan-100/15 p-3"
                 >
                   <summary className="cursor-pointer text-sm">
-                    {trace.state === "error" ? "Blocked" : "Verified"} ·{" "}
+                    {trace.state === "error" ? t("Blocked") : t("Verified")} ·{" "}
                     {trace.intent} ·{" "}
-                    {new Date(trace.startedAt).toLocaleTimeString()}
+                    {date(trace.startedAt, { timeStyle: "short" })}
                   </summary>
                   <div className="mt-3 space-y-2 text-xs">
                     {trace.error && (
-                      <p className="text-amber-100">{trace.error}</p>
+                      <p className="text-amber-100">{errorText(trace.error)}</p>
                     )}
                     {trace.toolCalls.map(call => (
                       <div
@@ -532,8 +550,8 @@ export default function WorkspacePanels({
                         className="border-l border-cyan-200/30 pl-3"
                       >
                         <p>
-                          {call.tool} · {call.permission} ·{" "}
-                          {call.verified ? "completed" : "blocked"}
+                          {call.tool} · {t(call.permission)} ·{" "}
+                          {call.verified ? t("completed") : t("blocked")}
                         </p>
                         <pre className="mt-1 whitespace-pre-wrap break-all text-cyan-100/50">
                           {JSON.stringify(call.input, null, 2)}
@@ -545,10 +563,10 @@ export default function WorkspacePanels({
               ))}
             {!state.traces.length && (
               <p className="text-sm text-cyan-100/50">
-                Issue a command to see its execution trace.
+                {t("Issue a command to see its execution trace.")}
               </p>
             )}
-            <h3 className="technical-label">Recent audit</h3>
+            <h3 className="technical-label">{t("Recent audit")}</h3>
             {state.audit
               .slice(-20)
               .reverse()
@@ -557,8 +575,8 @@ export default function WorkspacePanels({
                   key={entry.id}
                   className="font-mono text-xs text-cyan-100/65"
                 >
-                  {new Date(entry.createdAt).toLocaleTimeString()} ·{" "}
-                  {entry.action} · {entry.ok ? "OK" : "BLOCKED"}
+                  {date(entry.createdAt, { timeStyle: "short" })} ·{" "}
+                  {entry.action} · {entry.ok ? t("OK") : t("BLOCKED")}
                 </p>
               ))}
           </div>
@@ -568,26 +586,26 @@ export default function WorkspacePanels({
           <div className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                ["Runtime", assistant.status.runtime],
+                [t("Runtime"), assistant.status.runtime],
                 [
-                  "Workspace",
+                  t("Workspace"),
                   assistant.mode === "server"
-                    ? "Server persistence"
-                    : "Browser storage",
+                    ? t("Server persistence")
+                    : t("Browser storage"),
                 ],
                 [
-                  "AI conversation",
+                  t("AI conversation"),
                   assistant.status.aiConfigured
-                    ? "Configured"
-                    : "Provider not configured",
+                    ? t("Configured")
+                    : t("Provider not configured"),
                 ],
-                ["Saved notes", state.memory.length],
+                [t("Saved notes"), state.memory.length],
                 [
-                  "Active timers",
+                  t("Active timers"),
                   state.timers.filter(item => item.status === "active").length,
                 ],
                 [
-                  "Enabled reminders",
+                  t("Enabled reminders"),
                   state.automations.filter(item => item.enabled).length,
                 ],
               ].map(([label, value]) => (
@@ -595,16 +613,16 @@ export default function WorkspacePanels({
                   key={String(label)}
                   className="border border-cyan-100/15 p-3"
                 >
-                  <div className="technical-label">{label}</div>
-                  <div className="mt-2 text-sm">{String(value)}</div>
+                  <div className="technical-label">{t(String(label))}</div>
+                  <div className="mt-2 text-sm">{t(String(value))}</div>
                 </div>
               ))}
             </div>
             <button className={button} onClick={() => void assistant.refresh()}>
-              Refresh runtime
+              {t("Refresh runtime")}
             </button>
             <h3 className="technical-label">
-              Tool registry · {assistant.tools.length} tools
+              {t("Tool registry ·")} {assistant.tools.length} {t("tools")}
             </h3>
             {assistant.tools.map(tool => (
               <article
@@ -613,10 +631,12 @@ export default function WorkspacePanels({
               >
                 <p className="font-mono text-xs">
                   {tool.name}{" "}
-                  <span className="text-cyan-200/55">· {tool.permission}</span>
+                  <span className="text-cyan-200/55">
+                    · {t(tool.permission)}
+                  </span>
                 </p>
                 <p className="mt-1 text-xs text-cyan-100/50">
-                  {tool.description}
+                  {t(tool.description)}
                 </p>
               </article>
             ))}
@@ -628,7 +648,11 @@ export default function WorkspacePanels({
             {module === "settings" && (
               <>
                 <label className="block text-xs">
-                  Your name
+                  {t("Interface language")}
+                  <LanguageSwitch />
+                </label>
+                <label className="block text-xs">
+                  {t("Your name")}
                   <input
                     value={preferences.name}
                     onChange={event =>
@@ -646,32 +670,36 @@ export default function WorkspacePanels({
                       onPreferences({ readOnly: event.target.checked })
                     }
                   />
-                  Read-only commands and workspace
+                  {t("Read-only commands and workspace")}
                 </label>
                 <div className="border border-cyan-100/15 p-3">
                   <p className="text-sm">
                     {assistant.mode === "server"
-                      ? "Connected to the Nexo server"
-                      : "Browser-local assistant"}
+                      ? t("Connected to the Nexo server")
+                      : t("Browser-local assistant")}
                   </p>
                   <p className="mt-2 text-xs leading-relaxed text-cyan-100/55">
                     {assistant.status.aiConfigured
-                      ? "Open-ended conversation uses your configured server AI provider. Relevant notes and recent conversation are included with your request."
-                      : "Notes, timers, reminders and live data work without an AI key. For open-ended conversation, run the Node server with OPENAI_API_KEY. Keys remain on the server. See README for setup."}
+                      ? t(
+                          "Open-ended conversation uses your configured server AI provider. Relevant notes and recent conversation are included with your request."
+                        )
+                      : t(
+                          "Notes, timers, reminders and live data work without an AI key. For open-ended conversation, run the Node server with OPENAI_API_KEY. Keys remain on the server. See README for setup."
+                        )}
                   </p>
                   <button
                     className={`${button} mt-3`}
                     onClick={() => void assistant.refresh()}
                   >
-                    Refresh connection
+                    {t("Refresh connection")}
                   </button>
                 </div>
                 <div className="space-y-3">
                   <p className="technical-label">
-                    Weather location ·{" "}
+                    {t("Weather location ·")}{" "}
                     {coordinates
                       ? `${coordinates.latitude.toFixed(3)}, ${coordinates.longitude.toFixed(3)}`
-                      : "Not set"}
+                      : t("Not set")}
                   </p>
                   <form
                     onSubmit={event => {
@@ -686,11 +714,11 @@ export default function WorkspacePanels({
                         Math.abs(lat) > 90 ||
                         Math.abs(lon) > 180
                       ) {
-                        toast.error("Enter valid latitude and longitude.");
+                        toast.error(t("Enter valid latitude and longitude."));
                         return;
                       }
                       onCoordinates({ latitude: lat, longitude: lon });
-                      toast.success("Weather location updated");
+                      toast.success(t("Weather location updated"));
                     }}
                     className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
                   >
@@ -703,8 +731,8 @@ export default function WorkspacePanels({
                       max={90}
                       step="any"
                       required
-                      placeholder="Latitude"
-                      aria-label="Latitude"
+                      placeholder={t("Latitude")}
+                      aria-label={t("Latitude")}
                     />
                     <input
                       value={longitude}
@@ -715,10 +743,10 @@ export default function WorkspacePanels({
                       max={180}
                       step="any"
                       required
-                      placeholder="Longitude"
-                      aria-label="Longitude"
+                      placeholder={t("Longitude")}
+                      aria-label={t("Longitude")}
                     />
-                    <button className={button}>Set location</button>
+                    <button className={button}>{t("Set location")}</button>
                   </form>
                 </div>
               </>
@@ -732,10 +760,10 @@ export default function WorkspacePanels({
                   if (!event.target.checked) window.speechSynthesis?.cancel();
                 }}
               />
-              Speak assistant responses
+              {t("Speak assistant responses")}
             </label>
             <label className="block text-xs">
-              Recognition language
+              {t("Recognition language")}
               <select
                 value={preferences.language}
                 onChange={event =>
@@ -745,18 +773,18 @@ export default function WorkspacePanels({
                 }
                 className={`${field} mt-2`}
               >
-                <option value="en-GB">English</option>
-                <option value="de-DE">Deutsch</option>
+                <option value="en-GB">{t("English")}</option>
+                <option value="de-DE">{t("Deutsch")}</option>
               </select>
             </label>
             <label className="block text-xs">
-              Voice
+              {t("Voice")}
               <select
                 value={preferences.voice}
                 onChange={event => onPreferences({ voice: event.target.value })}
                 className={`${field} mt-2`}
               >
-                <option value="">Browser default</option>
+                <option value="">{t("Browser default")}</option>
                 {voices.map(voice => (
                   <option key={voice.voiceURI} value={voice.voiceURI}>
                     {voice.name} ({voice.lang})
@@ -765,7 +793,7 @@ export default function WorkspacePanels({
               </select>
             </label>
             <label className="block text-xs">
-              Speech speed · {preferences.rate.toFixed(2)}
+              {t("Speech speed ·")} {preferences.rate.toFixed(2)}
               <input
                 type="range"
                 min={0.5}
@@ -780,7 +808,7 @@ export default function WorkspacePanels({
             </label>
             <button className={button} onClick={testVoice}>
               <Volume2 size={14} />
-              Test voice
+              {t("Test voice")}
             </button>
             {module === "settings" && (
               <div className="flex flex-wrap gap-3 border-t border-cyan-100/15 pt-4">
@@ -794,7 +822,7 @@ export default function WorkspacePanels({
                   }
                 >
                   <Download size={14} />
-                  Export workspace
+                  {t("Export workspace")}
                 </button>
                 {assistant.recovery && (
                   <button
@@ -806,7 +834,7 @@ export default function WorkspacePanels({
                       )
                     }
                   >
-                    Download recovery file
+                    {t("Download recovery file")}
                   </button>
                 )}
                 <button
@@ -814,20 +842,24 @@ export default function WorkspacePanels({
                   onClick={() => {
                     if (!("Notification" in window)) {
                       toast.error(
-                        "Desktop notifications are unavailable in this browser."
+                        t(
+                          "Desktop notifications are unavailable in this browser."
+                        )
                       );
                       return;
                     }
                     void Notification.requestPermission().then(permission =>
                       toast(
                         permission === "granted"
-                          ? "Desktop notifications enabled while Nexo is open."
-                          : "In-app notifications remain available."
+                          ? t(
+                              "Desktop notifications enabled while Nexo is open."
+                            )
+                          : t("In-app notifications remain available.")
                       )
                     );
                   }}
                 >
-                  Enable desktop notifications
+                  {t("Enable desktop notifications")}
                 </button>
               </div>
             )}
@@ -841,7 +873,7 @@ export default function WorkspacePanels({
               disabled={disabled}
               onClick={() => void execute("notification.ack", {})}
             >
-              Mark all as read
+              {t("Mark all as read")}
             </button>
             {state.notifications
               .slice()
@@ -851,15 +883,17 @@ export default function WorkspacePanels({
                   key={item.id}
                   className={`border p-3 ${item.read ? "border-cyan-100/10 text-cyan-100/50" : "border-cyan-200/30 text-cyan-50"}`}
                 >
-                  <p className="text-sm">{item.text}</p>
+                  <p className="text-sm">
+                    {notificationText(item, state.timers)}
+                  </p>
                   <p className="mt-1 text-xs text-cyan-100/40">
-                    {new Date(item.createdAt).toLocaleString()}
+                    {date(item.createdAt)}
                   </p>
                 </article>
               ))}
             {!state.notifications.length && (
               <p className="text-sm text-cyan-100/50">
-                Completed timers and scheduled reminders appear here.
+                {t("Completed timers and scheduled reminders appear here.")}
               </p>
             )}
           </div>

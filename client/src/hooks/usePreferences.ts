@@ -5,6 +5,14 @@ const schema = z.object({
   name: z.string().max(60).default("Commander"),
   voiceEnabled: z.boolean().default(false),
   language: z.enum(["en-GB", "de-DE"]).default("en-GB"),
+  uiLanguage: z
+    .enum(["en", "de"])
+    .default(() =>
+      typeof navigator !== "undefined" &&
+      navigator.language.toLowerCase().startsWith("de")
+        ? "de"
+        : "en"
+    ),
   voice: z.string().max(200).default(""),
   rate: z.number().min(0.5).max(1.5).default(1),
   readOnly: z.boolean().default(false),
@@ -18,12 +26,26 @@ const schema = z.object({
 });
 export type Preferences = z.infer<typeof schema>;
 const key = "nexo.preferences.v1";
+
+function parsePreferences(value: unknown): Preferences {
+  const saved =
+    value !== null && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  const parsed = schema.parse(saved);
+  if (!Object.hasOwn(saved, "uiLanguage") && saved.language === "de-DE")
+    parsed.uiLanguage = "de";
+  if (!Object.hasOwn(saved, "language"))
+    parsed.language = parsed.uiLanguage === "de" ? "de-DE" : "en-GB";
+  return parsed;
+}
+
 export function usePreferences() {
   const [preferences, set] = useState<Preferences>(() => {
     try {
-      return schema.parse(JSON.parse(localStorage.getItem(key) ?? "{}"));
+      return parsePreferences(JSON.parse(localStorage.getItem(key) ?? "{}"));
     } catch {
-      return schema.parse({});
+      return parsePreferences({});
     }
   });
   const [warning, setWarning] = useState<string>();

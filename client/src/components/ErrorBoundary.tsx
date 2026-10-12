@@ -1,6 +1,12 @@
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Component, ReactNode } from "react";
+import { useI18n } from "@/contexts/LanguageContext";
+
+function LocalizedText({ message }: { message: string }) {
+  const { t } = useI18n();
+  return <>{t(message)}</>;
+}
 
 interface Props {
   children: ReactNode;
@@ -31,7 +37,9 @@ class ErrorBoundary extends Component<Props, State> {
               className="text-destructive mb-6 flex-shrink-0"
             />
 
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
+            <h2 className="text-xl mb-4">
+              <LocalizedText message="An unexpected error occurred." />
+            </h2>
 
             <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
               <pre className="text-sm text-muted-foreground whitespace-break-spaces">
@@ -48,7 +56,7 @@ class ErrorBoundary extends Component<Props, State> {
               )}
             >
               <RotateCcw size={16} />
-              Reload Page
+              <LocalizedText message="Reload Page" />
             </button>
           </div>
         </div>

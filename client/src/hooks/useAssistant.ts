@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
 import { createBrowserAssistant, WORKSPACE_KEY } from "@/lib/assistant";
+import { useI18n } from "@/contexts/LanguageContext";
 import {
   automationInputSchema,
   memoryInputSchema,
@@ -10,6 +11,7 @@ import {
 import type { AgentContext, AgentTrace, Workspace } from "@shared/nexo/types";
 
 export function useAssistant() {
+  const { language } = useI18n();
   const [local] = useState(createBrowserAssistant);
   const [workspace, setWorkspace] = useState<Workspace>(() =>
     local.assistant.store.read()
@@ -203,6 +205,7 @@ export function useAssistant() {
             input,
             coordinates: context.coordinates,
             granted: readOnly ? "read" : "write",
+            language: context.language ?? language,
           });
           update(result);
           return result;
@@ -210,12 +213,12 @@ export function useAssistant() {
         const result = await local.assistant.runAgent(
           input,
           readOnly ? "read" : "write",
-          context
+          { ...context, language: context.language ?? language }
         );
         syncLocal();
         return result;
       }),
-    [client, local, operation, syncLocal, update]
+    [client, local, operation, syncLocal, update, language]
   );
 
   const execute = useCallback(

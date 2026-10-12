@@ -53,7 +53,8 @@ import { toast } from "sonner";
 import { getCurrentWeather, getLatestHeadlines } from "@shared/liveData";
 import { newId } from "@shared/nexo/store";
 import { useAssistant } from "@/hooks/useAssistant";
-import { usePreferences } from "@/hooks/usePreferences";
+import { useI18n } from "@/contexts/LanguageContext";
+import LanguageSwitch from "@/components/LanguageSwitch";
 import WorkspacePanels, {
   countdown,
   type WorkspaceModule,
@@ -124,7 +125,13 @@ export default function Home() {
     preferences,
     update: updatePreferences,
     warning: preferencesWarning,
-  } = usePreferences();
+    t,
+    language,
+    locale,
+    date,
+    errorText,
+    notificationText,
+  } = useI18n();
   const [now, setNow] = useState(() => new Date());
   const [activeModule, setActiveModule] = useState<Module>("command");
   const [assistantState, setAssistantState] = useState<AssistantState>("idle");
@@ -183,10 +190,10 @@ export default function Home() {
     );
     for (const item of newNotifications) notified.current.add(item.id);
     for (const item of newNotifications.slice(-5)) {
-      toast(item.text, {
+      toast(notificationText(item, assistant.workspace.timers), {
         duration: 10000,
         action: {
-          label: "View",
+          label: t("View"),
           onClick: () => setActiveModule("notifications"),
         },
       });
@@ -195,7 +202,10 @@ export default function Home() {
         Notification.permission === "granted" &&
         document.hidden
       )
-        new Notification("Nexo reminder", { body: item.text, tag: item.id });
+        new Notification(t("Nexo reminder"), {
+          body: notificationText(item, assistant.workspace.timers),
+          tag: item.id,
+        });
     }
   }, [assistant.workspace.notifications]);
 
@@ -307,12 +317,12 @@ export default function Home() {
   const statusCopy = useMemo(
     () =>
       ({
-        idle: "Awaiting a command",
-        listening: "Listening — speak freely",
-        thinking: "Processing intent",
-        speaking: "Response in progress",
+        idle: t("Awaiting a command"),
+        listening: t("Listening — speak freely"),
+        thinking: t("Processing intent"),
+        speaking: t("Response in progress"),
       })[assistantState],
-    [assistantState]
+    [assistantState, t]
   );
 
   const refreshWeather = useCallback(
@@ -386,11 +396,12 @@ export default function Home() {
     });
     setInput("");
     setAssistantState("thinking");
-    if (/^open knowledge base$/i.test(clean)) setActiveModule("knowledge");
+    if (/^(open knowledge base|öffne (die )?wissensdatenbank)$/i.test(clean))
+      setActiveModule("knowledge");
     try {
       const { response: reply } = await assistant.run(
         clean,
-        { coordinates: coordinates ?? undefined },
+        { coordinates: coordinates ?? undefined, language },
         preferences.readOnly
       );
       setPendingCommand(null);
@@ -432,7 +443,9 @@ export default function Home() {
       (window as any).webkitSpeechRecognition;
     if (!Recognition) {
       toast(
-        "Voice recognition is unavailable in this browser. Use the text console."
+        t(
+          "Voice recognition is unavailable in this browser. Use the text console."
+        )
       );
       return;
     }
@@ -449,7 +462,9 @@ export default function Home() {
       setAssistantState("idle");
       if (event.error !== "aborted")
         toast.error(
-          `Voice input unavailable: ${event.error ?? "recognition failed"}`
+          t("Voice input unavailable: {reason}", {
+            reason: t(event.error ?? "recognition failed"),
+          })
         );
     };
     recognition.onend = () =>
@@ -460,7 +475,9 @@ export default function Home() {
       recognition.start();
     } catch {
       setAssistantState("idle");
-      toast.error("Voice input could not start. Check microphone permissions.");
+      toast.error(
+        t("Voice input could not start. Check microphone permissions.")
+      );
     }
   };
 
@@ -476,37 +493,40 @@ export default function Home() {
 
   const coreClass = assistantState === "idle" ? "" : `core-${assistantState}`;
   const moduleTitle =
-    moduleItems.find(item => item.id === activeModule)?.label ?? "Command bay";
+    moduleItems.find(item => item.id === activeModule)?.label ??
+    t("Command bay");
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-ui-language={language}>
       <div className="ambient-plate" />
       <div className="grain" />
 
-      <header className="relative z-20 flex h-[76px] items-center justify-between border-b border-cyan-100/10 px-4 sm:px-6 lg:px-8">
+      <header className="nexo-header relative z-20 flex h-[76px] items-center justify-between border-b border-cyan-100/10 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsRailOpen(open => !open)}
             className="grid h-9 w-9 place-items-center border border-cyan-100/15 bg-cyan-100/[0.025] text-cyan-50 transition-colors hover:border-cyan-300/40 hover:bg-cyan-300/[0.08] lg:hidden"
-            aria-label="Toggle navigation"
+            aria-label={t("Toggle navigation")}
           >
             {isRailOpen ? <X size={18} /> : <PanelLeft size={18} />}
           </button>
           <div className="flex items-center gap-3">
             <img
               src={`${import.meta.env.BASE_URL}nexo-logo.svg`}
-              alt="Nexo Prism"
+              alt={t("Nexo Prism")}
               className="h-9 w-9 object-contain drop-shadow-[0_0_13px_rgba(38,228,255,0.7)]"
             />
             <div>
               <div className="flex items-baseline gap-2">
                 <span className="text-[1.05rem] font-bold tracking-[0.18em] text-white">
-                  NEXO
+                  {t("NEXO")}
                 </span>
-                <span className="technical-label text-cyan-200/75">Jarvis</span>
+                <span className="technical-label text-cyan-200/75">
+                  {t("Jarvis")}
+                </span>
               </div>
-              <p className="technical-label mt-0.5 text-[0.5rem] tracking-[0.13em] text-cyan-100/45">
-                Personal command environment
+              <p className="brand-tagline technical-label mt-0.5 text-[0.5rem] tracking-[0.13em] text-cyan-100/45">
+                {t("Personal command environment")}
               </p>
             </div>
           </div>
@@ -517,12 +537,12 @@ export default function Home() {
             <span className="signal-dot" />
             <span className="technical-label text-cyan-100">
               {assistant.mode === "checking"
-                ? "Connecting workspace"
+                ? t("Connecting workspace")
                 : !assistant.connected
-                  ? "Server disconnected"
+                  ? t("Server disconnected")
                   : assistant.status.aiConfigured
-                    ? "AI conversation online"
-                    : "Command engine ready"}
+                    ? t("AI conversation online")
+                    : t("Command engine ready")}
             </span>
           </div>
           <div className="text-right">
@@ -530,7 +550,7 @@ export default function Home() {
               {formatClock(now)}
             </div>
             <div className="technical-label mt-0.5 text-[0.52rem]">
-              {new Intl.DateTimeFormat(undefined, {
+              {new Intl.DateTimeFormat(locale, {
                 dateStyle: "medium",
               }).format(now)}{" "}
               · {Intl.DateTimeFormat().resolvedOptions().timeZone}
@@ -538,15 +558,22 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="header-actions flex items-center gap-2">
+          <LanguageSwitch compact />
           {fullscreenSupported && (
             <button
               onClick={toggleFullscreen}
               className={`hidden h-9 w-9 place-items-center transition-colors hover:text-cyan-200 sm:grid ${isFullscreen ? "text-cyan-200" : "text-cyan-50/70"}`}
-              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              aria-label={
+                isFullscreen ? t("Exit fullscreen") : t("Enter fullscreen")
+              }
               aria-pressed={isFullscreen}
               aria-keyshortcuts="F"
-              title={`${isFullscreen ? "Exit" : "Enter"} fullscreen (F)`}
+              title={t("{action} (F)", {
+                action: isFullscreen
+                  ? t("Exit fullscreen")
+                  : t("Enter fullscreen"),
+              })}
             >
               {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
             </button>
@@ -554,7 +581,9 @@ export default function Home() {
           <button
             onClick={() => setActiveModule("notifications")}
             className="relative grid h-9 w-9 place-items-center text-cyan-50/70 transition-colors hover:text-cyan-200"
-            aria-label={`Notifications, ${unreadNotifications} unread`}
+            aria-label={t("Notifications, {count} unread", {
+              count: unreadNotifications,
+            })}
           >
             <Bell size={18} />
             {unreadNotifications > 0 && (
@@ -572,19 +601,19 @@ export default function Home() {
               }
             }}
             className={`grid h-9 w-9 place-items-center transition-colors ${isSoundOn ? "text-cyan-200" : "text-cyan-50/35"}`}
-            aria-label="Toggle voice output"
+            aria-label={t("Toggle voice output")}
             aria-pressed={isSoundOn}
           >
             {isSoundOn ? <Volume2 size={18} /> : <MicOff size={18} />}
           </button>
-          <div className="ml-1 grid h-8 w-8 place-items-center border border-cyan-100/20 bg-cyan-200/10 font-mono text-[0.68rem] text-cyan-100">
+          <div className="profile-badge ml-1 grid h-8 w-8 place-items-center border border-cyan-100/20 bg-cyan-200/10 font-mono text-[0.68rem] text-cyan-100">
             {preferences.name
               .trim()
               .split(/\s+/)
               .map(part => part[0])
               .slice(0, 2)
               .join("")
-              .toUpperCase() || "N"}
+              .toUpperCase() || t("N")}
           </div>
         </div>
       </header>
@@ -594,7 +623,7 @@ export default function Home() {
           className={`absolute inset-y-0 left-0 z-30 w-[232px] border-r border-cyan-100/10 bg-[#061016]/95 px-3 py-5 backdrop-blur-xl transition-transform duration-200 lg:static lg:translate-x-0 ${isRailOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="technical-label mb-3 px-3 text-[0.55rem]">
-            Workspace modules
+            {t("Workspace modules")}
           </div>
           <nav className="space-y-1">
             {moduleItems.map(item => {
@@ -610,7 +639,7 @@ export default function Home() {
                   className={`group flex w-full items-center gap-3 border-l-2 px-3 py-3 text-left text-sm transition-all ${isActive ? "border-cyan-300 bg-cyan-300/[0.09] text-cyan-50" : "border-transparent text-cyan-100/50 hover:border-cyan-300/40 hover:bg-cyan-300/[0.04] hover:text-cyan-50"}`}
                 >
                   <Icon size={17} strokeWidth={isActive ? 2 : 1.5} />
-                  <span>{item.label}</span>
+                  <span>{t(item.label)}</span>
                   {isActive && (
                     <ChevronRight size={15} className="ml-auto text-cyan-300" />
                   )}
@@ -618,11 +647,11 @@ export default function Home() {
               );
             })}
           </nav>
-          <div className="absolute bottom-5 left-3 right-3">
+          <div className="quick-capture-panel">
             <div className="instrument-panel panel-cut relative overflow-hidden p-3">
               <div className="corner-mark" />
               <div className="technical-label mb-3 text-[0.53rem]">
-                Quick capture
+                {t("Quick capture")}
               </div>
               <button
                 onClick={() => {
@@ -633,10 +662,10 @@ export default function Home() {
               >
                 <span className="flex items-center gap-2">
                   <Plus size={14} />
-                  New note
+                  {t("New note")}
                 </span>
                 <span className="font-mono text-[0.58rem] text-cyan-200/45">
-                  N
+                  {t("N")}
                 </span>
               </button>
             </div>
@@ -645,7 +674,7 @@ export default function Home() {
 
         {isRailOpen && (
           <button
-            aria-label="Close navigation"
+            aria-label={t("Close navigation")}
             className="absolute inset-0 z-20 bg-black/55 lg:hidden"
             onClick={() => setIsRailOpen(false)}
           />
@@ -655,25 +684,20 @@ export default function Home() {
           <div className="command-deck-heading mb-5 flex items-end justify-between gap-4">
             <div>
               <div className="technical-label mb-1 text-cyan-200/70">
-                Module / {moduleTitle}
+                {t("Module /")} {t(moduleTitle)}
               </div>
               <h1 className="text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[1.8rem]">
-                Good{" "}
-                {now.getHours() < 12
-                  ? "morning"
-                  : now.getHours() < 18
-                    ? "afternoon"
-                    : "evening"}
-                , {preferences.name.trim() || "Commander"}.
+                {t("Good {period}, {name}.", {
+                  period: t(
+                    now.getHours() < 12
+                      ? "morning"
+                      : now.getHours() < 18
+                        ? "afternoon"
+                        : "evening"
+                  ),
+                  name: preferences.name.trim() || "Commander",
+                })}
               </h1>
-            </div>
-            <div className="hidden text-right sm:block">
-              <div className="technical-label">Session duration</div>
-              <div className="mt-1 font-mono text-xs text-cyan-100/70">
-                {new Date(Math.max(0, now.getTime() - sessionStartedAt.current))
-                  .toISOString()
-                  .slice(11, 19)}
-              </div>
             </div>
           </div>
 
@@ -713,7 +737,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="technical-label hidden text-[0.54rem] sm:block">
-                    Voice input · browser native
+                    {t("Voice input · browser native")}
                   </span>
                   <button
                     onClick={toggleListening}
@@ -721,37 +745,44 @@ export default function Home() {
                     className={`microphone-button flex items-center gap-2 border px-3 py-1.5 text-xs font-medium ${assistantState === "listening" ? "border-cyan-200 bg-cyan-200/15 text-cyan-50 shadow-[0_0_20px_rgba(38,228,255,.18)]" : "border-cyan-100/20 bg-cyan-100/[0.04] text-cyan-100/70 hover:border-cyan-200/60 hover:text-cyan-50"}`}
                   >
                     <Mic size={14} />
-                    {assistantState === "listening" ? "Stop" : "Speak"}
+                    {assistantState === "listening" ? t("Stop") : t("Speak")}
                   </button>
                 </div>
               </div>
 
               <div className="command-core-viewport relative flex min-h-[372px] items-center justify-center overflow-hidden">
                 <div className="absolute left-2 top-5 hidden text-left sm:block">
-                  <div className="technical-label">Runtime mode</div>
+                  <div className="technical-label">{t("Runtime mode")}</div>
                   <div className="mt-1 font-mono text-xs text-cyan-50">
-                    {assistant.mode.toUpperCase()}
+                    {t(assistant.mode.toUpperCase())}
                   </div>
-                  <div className="mt-5 technical-label">Last execution</div>
+                  <div className="mt-5 technical-label">
+                    {t("Last execution")}
+                  </div>
                   <div className="mt-1 font-mono text-xs text-cyan-50">
                     {latestTrace?.completedAt
                       ? `${Date.parse(latestTrace.completedAt) - Date.parse(latestTrace.startedAt)} ms`
-                      : "Awaiting input"}
+                      : t("Awaiting input")}
                   </div>
                 </div>
                 <div className="absolute right-2 top-5 hidden text-right sm:block">
-                  <div className="technical-label">Active channel</div>
+                  <div className="technical-label">{t("Active channel")}</div>
                   <div className="mt-1 font-mono text-xs text-cyan-50">
-                    {assistantState === "listening" ? "VOICE" : "TEXT"}
+                    {assistantState === "listening" ? t("VOICE") : t("TEXT")}
                   </div>
-                  <div className="mt-5 technical-label">Available tools</div>
+                  <div className="mt-5 technical-label">
+                    {t("Available tools")}
+                  </div>
                   <div className="mt-1 font-mono text-xs text-cyan-50">
                     {assistant.tools.length}
                   </div>
                 </div>
                 <div
+                  data-core-label={t("CORE / LIVE")}
                   className={`core-stage ${coreClass} ${webglEnabled ? "core-stage-webgl" : ""}`}
-                  aria-label={`Nexo core is ${assistantState}`}
+                  aria-label={t("Nexo core is {state}", {
+                    state: t(assistantState),
+                  })}
                   onPointerMove={
                     webglEnabled ? undefined : handleCorePointerMove
                   }
@@ -764,7 +795,7 @@ export default function Home() {
                       fallback={
                         <div className="core-webgl-loader">
                           <span />
-                          Calibrating spatial core
+                          {t("Calibrating spatial core")}
                         </div>
                       }
                     >
@@ -790,7 +821,7 @@ export default function Home() {
                       <img
                         className="core-image"
                         src={`${import.meta.env.BASE_URL}nexo-core.svg`}
-                        alt="Animated Nexo orbital core"
+                        alt={t("Animated Nexo orbital core")}
                       />
                       <div className="core-glare" aria-hidden="true" />
                     </>
@@ -799,24 +830,27 @@ export default function Home() {
                     <button
                       onClick={() => setCoreSceneKey(key => key + 1)}
                       className="core-control"
-                      aria-label="Reset 3D core view"
+                      aria-label={t("Reset 3D core view")}
                     >
                       <RotateCcw size={13} />
                     </button>
                     <button
                       onClick={() => setCoreFocusOpen(true)}
                       className="core-control"
-                      aria-label="Open immersive 3D core"
+                      aria-label={t("Open immersive 3D core")}
                     >
                       <Maximize2 size={13} />
                     </button>
                   </div>
                   <div className="absolute bottom-3 z-10 text-center">
                     <div className="technical-label text-cyan-100/55">
-                      Nexo core {webglEnabled ? "· WebGL" : "· fallback"}
+                      {t("Nexo core")}{" "}
+                      {webglEnabled ? t("· WebGL") : t("· fallback")}
                     </div>
                     <div className="mt-1 text-xs text-cyan-50">
-                      {assistantState === "idle" ? "Standing by" : statusCopy}
+                      {assistantState === "idle"
+                        ? t("Standing by")
+                        : statusCopy}
                     </div>
                   </div>
                 </div>
@@ -825,22 +859,26 @@ export default function Home() {
               <div className="grid gap-4 border-t border-cyan-100/10 pt-4 lg:grid-cols-[1fr_0.82fr]">
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="technical-label">Conversation stream</span>
+                    <span className="technical-label">
+                      {t("Conversation stream")}
+                    </span>
                     <span className="font-mono text-[0.6rem] text-cyan-100/35">
-                      {conversation.length.toString().padStart(2, "0")} messages
+                      {conversation.length.toString().padStart(2, "0")}{" "}
+                      {t("messages")}
                     </span>
                   </div>
                   <div
                     ref={transcriptRef}
                     role="log"
-                    aria-label="Conversation stream"
+                    aria-label={t("Conversation stream")}
                     aria-live="polite"
                     className="transcript-scroll h-[98px] space-y-2 overflow-y-auto pr-2"
                   >
                     {!conversation.length && (
                       <p className="text-xs text-cyan-100/55">
-                        Ready to help. Save a note, start a timer, or type Help
-                        for available commands.
+                        {t(
+                          "Ready to help. Save a note, start a timer, or type Help for available commands."
+                        )}
                       </p>
                     )}
                     {conversation.map(item => (
@@ -875,11 +913,11 @@ export default function Home() {
                         !assistant.isReady ||
                         !assistant.connected
                       }
-                      aria-label="Issue a command"
+                      aria-label={t("Issue a command")}
                       placeholder={
                         assistant.isBusy
-                          ? "Executing command…"
-                          : "Issue a command…"
+                          ? t("Executing command…")
+                          : t("Issue a command…")
                       }
                       className="min-w-0 flex-1 bg-transparent text-sm text-cyan-50 outline-none placeholder:text-cyan-100/28"
                     />
@@ -892,14 +930,14 @@ export default function Home() {
                         !input.trim()
                       }
                       className="grid h-7 w-7 disabled:opacity-40 place-items-center bg-cyan-300 text-[#031114] transition-transform hover:bg-cyan-100 active:scale-95"
-                      aria-label="Send command"
+                      aria-label={t("Send command")}
                     >
                       <Send size={14} />
                     </button>
                   </form>
                   {(assistant.error || preferencesWarning) && (
                     <div role="alert" className="mt-2 text-xs text-amber-100">
-                      {assistant.error || preferencesWarning}
+                      {errorText(assistant.error || preferencesWarning || "")}
                       <button
                         onClick={() => {
                           assistant.clearError();
@@ -907,7 +945,7 @@ export default function Home() {
                         }}
                         className="ml-2 underline"
                       >
-                        Retry connection
+                        {t("Retry connection")}
                       </button>
                     </div>
                   )}
@@ -920,11 +958,11 @@ export default function Home() {
                 <div className="corner-mark" />
                 <div className="relative z-10 flex items-start justify-between">
                   <div>
-                    <div className="technical-label">Local weather</div>
+                    <div className="technical-label">{t("Local weather")}</div>
                     {weatherLoading ? (
                       <div className="live-loading-title">
                         <span className="live-loading-orbit" />
-                        Reading local telemetry
+                        {t("Reading local telemetry")}
                       </div>
                     ) : (
                       <h2 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">
@@ -932,17 +970,24 @@ export default function Home() {
                           ? `${Math.round(weather.temperature)}°`
                           : locationState === "locating"
                             ? "—"
-                            : "Location"}
+                            : t("Location")}
                       </h2>
                     )}
                     <p className="mt-1 max-w-[13rem] text-xs leading-relaxed text-cyan-50/56">
                       {weather
-                        ? `${weather.condition} · Feels like ${Math.round(weather.apparentTemperature)}°`
+                        ? t("{condition} · Feels like {temperature}°", {
+                            condition: t(weather.condition),
+                            temperature: Math.round(
+                              weather.apparentTemperature
+                            ),
+                          })
                         : weatherError
-                          ? "Weather relay is temporarily unavailable."
+                          ? t("Weather relay is temporarily unavailable.")
                           : locationState === "denied"
-                            ? "Enable location access to receive weather telemetry."
-                            : "Locating your command environment…"}
+                            ? t(
+                                "Enable location access to receive weather telemetry."
+                              )
+                            : t("Locating your command environment…")}
                     </p>
                   </div>
                   <button
@@ -951,7 +996,7 @@ export default function Home() {
                     }
                     disabled={!coordinates || weatherLoading}
                     className="grid h-7 w-7 place-items-center text-cyan-200 transition-colors hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:text-cyan-100/25"
-                    aria-label="Refresh weather"
+                    aria-label={t("Refresh weather")}
                   >
                     <CloudSun size={22} />
                   </button>
@@ -959,7 +1004,7 @@ export default function Home() {
                 {weatherLoading && (
                   <div
                     className="live-loading-stack"
-                    aria-label="Loading weather data"
+                    aria-label={t("Loading weather data")}
                   >
                     <span />
                     <span />
@@ -969,26 +1014,29 @@ export default function Home() {
                 <div className="relative z-10 mt-4 flex items-center gap-2 pb-2 text-xs text-cyan-200">
                   <MapPin size={13} />
                   {weather
-                    ? `${Math.round(weather.windSpeed)} km/h wind · ${weather.timezone}`
-                    : "Awaiting coordinates"}
+                    ? t("{speed} km/h wind · {timezone}", {
+                        speed: Math.round(weather.windSpeed),
+                        timezone: weather.timezone,
+                      })
+                    : t("Awaiting coordinates")}
                 </div>
-                <span className="module-coordinate">WX · LIVE</span>
+                <span className="module-coordinate">{t("WX · LIVE")}</span>
               </section>
 
               <section className="instrument-panel perimeter-module panel-cut relative min-h-[225px] border-l p-5">
                 <div className="corner-mark" />
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="technical-label">News relay</div>
+                    <div className="technical-label">{t("News relay")}</div>
                     <div className="mt-2 text-base font-semibold text-white">
-                      Current signals
+                      {t("Current signals")}
                     </div>
                   </div>
                   <button
                     onClick={() => void refreshHeadlines()}
                     disabled={headlinesLoading}
                     className="grid h-7 w-7 place-items-center text-cyan-300 transition-colors hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:text-cyan-100/25"
-                    aria-label="Refresh news"
+                    aria-label={t("Refresh news")}
                   >
                     <RefreshCw
                       size={17}
@@ -1000,7 +1048,7 @@ export default function Home() {
                   {headlinesLoading && (
                     <div
                       className="live-news-loading"
-                      aria-label="Loading news data"
+                      aria-label={t("Loading news data")}
                     >
                       <div className="live-news-scanline" />
                       <span />
@@ -1011,7 +1059,7 @@ export default function Home() {
                   {headlinesError && (
                     <div className="flex items-center gap-2 text-xs text-amber-200">
                       <WifiOff size={14} />
-                      News relay is temporarily unavailable.
+                      {t("News relay is temporarily unavailable.")}
                     </div>
                   )}
                   {headlines.map((headline, index) => (
@@ -1030,75 +1078,87 @@ export default function Home() {
                     </a>
                   ))}
                 </div>
-                <span className="module-coordinate">NEWS · 10M</span>
+                <span className="module-coordinate">{t("NEWS · 10M")}</span>
               </section>
 
               <section className="instrument-panel perimeter-module panel-cut relative border-l p-5 sm:col-span-2 xl:col-span-1">
                 <div className="corner-mark" />
                 <div className="flex items-center justify-between">
-                  <div className="technical-label">Calendar relay</div>
+                  <div className="technical-label">{t("Calendar relay")}</div>
                   <CalendarDays size={17} className="text-cyan-300" />
                 </div>
                 <div className="mt-3">
                   <p className="text-xs leading-relaxed text-cyan-50/58">
-                    No external calendar is connected. Timers and scheduled
-                    reminders are available in your workspace.
+                    {t(
+                      "No external calendar is connected. Timers and scheduled reminders are available in your workspace."
+                    )}
                   </p>
                   <button
                     onClick={() => setActiveModule("automations")}
                     className="mt-3 flex items-center gap-2 text-xs text-cyan-200 transition-colors hover:text-white"
                   >
                     <TimerReset size={13} />
-                    Open timers & reminders
+                    {t("Open timers & reminders")}
                   </button>
                   <button
                     onClick={() => setCalendarDialogOpen(true)}
                     className="mt-3 flex items-center gap-2 text-xs text-cyan-100/55 hover:text-white"
                   >
                     <Settings2 size={13} />
-                    Calendar provider information
+                    {t("Calendar provider information")}
                   </button>
                 </div>
-                <span className="module-coordinate">CAL · SECURE</span>
+                <span className="module-coordinate">{t("CAL · SECURE")}</span>
               </section>
             </aside>
           </div>
 
-          <div className="status-strip mt-5 grid gap-4 md:grid-cols-3">
+          <div className="status-strip mt-5 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+            <div className="flex items-center gap-3 border-t border-cyan-100/10 pt-3">
+              <Activity size={16} className="text-cyan-300" />
+              <div>
+                <div className="technical-label">{t("Session duration")}</div>
+                <div className="mt-0.5 font-mono text-xs text-cyan-100/68">
+                  {new Date(Math.max(0, now.getTime() - sessionStartedAt.current))
+                    .toISOString()
+                    .slice(11, 19)}
+                </div>
+              </div>
+            </div>
             <div className="flex items-center gap-3 border-t border-cyan-100/10 pt-3">
               <Radio size={16} className="text-cyan-300" />
               <div>
-                <div className="technical-label">Network</div>
+                <div className="technical-label">{t("Network")}</div>
                 <div className="mt-0.5 text-xs text-cyan-50/68">
                   {assistant.mode === "server"
                     ? assistant.connected
-                      ? "Server workspace connected"
-                      : "Server disconnected"
-                    : "Browser-local workspace"}
+                      ? t("Server workspace connected")
+                      : t("Server disconnected")
+                    : t("Browser-local workspace")}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3 border-t border-cyan-100/10 pt-3">
               <TimerReset size={16} className="text-cyan-300" />
               <div>
-                <div className="technical-label">Next reminder</div>
+                <div className="technical-label">{t("Next reminder")}</div>
                 <div className="mt-0.5 text-xs text-cyan-50/68">
                   {activeTimers[0]
                     ? `${activeTimers[0].title} · ${countdown(activeTimers[0].dueAt, now)}`
-                    : "No active countdowns"}
+                    : t("No active countdowns")}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3 border-t border-cyan-100/10 pt-3">
               <Moon size={16} className="text-cyan-300" />
               <div>
-                <div className="technical-label">Ambient state</div>
+                <div className="technical-label">{t("Ambient state")}</div>
                 <div className="mt-0.5 text-xs text-cyan-50/68">
                   {preferences.readOnly
-                    ? "Read-only mode"
+                    ? t("Read-only mode")
                     : isSoundOn
-                      ? "Voice output enabled"
-                      : "Silent output"}
+                      ? t("Voice output enabled")
+                      : t("Silent output")}
                 </div>
               </div>
             </div>
@@ -1129,16 +1189,15 @@ export default function Home() {
           <div className="border-b border-cyan-100/10 px-6 py-5">
             <DialogHeader>
               <div className="technical-label text-cyan-200/70">
-                Calendar relay / secure link
+                {t("Calendar relay / secure link")}
               </div>
               <DialogTitle className="mt-1 text-xl tracking-[-0.03em] text-white">
-                Calendar integrations
+                {t("Calendar integrations")}
               </DialogTitle>
               <DialogDescription className="text-xs leading-relaxed text-cyan-50/58">
-                Google and Outlook calendar connectors are not configured in
-                this installation. Use workspace reminders now; connecting an
-                external calendar requires a provider integration and account
-                authorization.
+                {t(
+                  "Google and Outlook calendar connectors are not configured in this installation. Use workspace reminders now; connecting an external calendar requires a provider integration and account authorization."
+                )}
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -1146,13 +1205,13 @@ export default function Home() {
             {[
               {
                 id: "google" as const,
-                name: "Google Calendar",
-                detail: "View your next events and focus windows.",
+                name: t("Google Calendar"),
+                detail: t("View your next events and focus windows."),
               },
               {
                 id: "outlook" as const,
-                name: "Outlook Calendar",
-                detail: "View your Microsoft 365 calendar signals.",
+                name: t("Outlook Calendar"),
+                detail: t("View your Microsoft 365 calendar signals."),
               },
             ].map(provider => (
               <button
@@ -1163,18 +1222,18 @@ export default function Home() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-medium text-white">
-                      {provider.name}
+                      {t(provider.name)}
                     </div>
                     <div className="mt-1 text-xs leading-relaxed text-cyan-50/54">
-                      {provider.detail}
+                      {t(provider.detail)}
                     </div>
                   </div>
                   <span
                     className={`technical-label text-[0.51rem] ${selectedCalendarProvider === provider.id ? "text-cyan-200" : "text-cyan-100/40"}`}
                   >
                     {selectedCalendarProvider === provider.id
-                      ? "Selected"
-                      : "Not connected"}
+                      ? t("Selected")
+                      : t("Not connected")}
                   </span>
                 </div>
               </button>
@@ -1183,8 +1242,19 @@ export default function Home() {
           <div className="border-t border-cyan-100/10 px-6 py-4">
             <p className="text-xs leading-relaxed text-amber-100/70">
               {selectedCalendarProvider
-                ? `Authorization for ${selectedCalendarProvider === "google" ? "Google Calendar" : "Outlook Calendar"} must be approved before data can be read.`
-                : "No authorization request is sent from this panel. Calendar connectors require additional provider setup."}
+                ? t(
+                    "Authorization for {provider} must be approved before data can be read.",
+                    {
+                      provider: t(
+                        selectedCalendarProvider === "google"
+                          ? "Google Calendar"
+                          : "Outlook Calendar"
+                      ),
+                    }
+                  )
+                : t(
+                    "No authorization request is sent from this panel. Calendar connectors require additional provider setup."
+                  )}
             </p>
           </div>
         </DialogContent>
@@ -1198,24 +1268,24 @@ export default function Home() {
           <div className="nexo-focus-topbar">
             <div>
               <div className="technical-label text-cyan-200/70">
-                Immersive core / spatial control
+                {t("Immersive core / spatial control")}
               </div>
               <div className="mt-1 text-sm text-cyan-50">
-                Drag to orbit · Scroll or pinch to zoom
+                {t("Drag to orbit · Scroll or pinch to zoom")}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCoreSceneKey(key => key + 1)}
                 className="core-control core-control-large"
-                aria-label="Reset immersive 3D core"
+                aria-label={t("Reset immersive 3D core")}
               >
                 <RotateCcw size={15} />
               </button>
               <button
                 onClick={() => setCoreFocusOpen(false)}
                 className="core-control core-control-large"
-                aria-label="Close immersive 3D core"
+                aria-label={t("Close immersive 3D core")}
               >
                 <X size={16} />
               </button>
@@ -1225,7 +1295,7 @@ export default function Home() {
             <Suspense
               fallback={
                 <div className="nexo-focus-loading">
-                  Calibrating immersive scene…
+                  {t("Calibrating immersive scene…")}
                 </div>
               }
             >
@@ -1237,8 +1307,9 @@ export default function Home() {
             </Suspense>
           ) : (
             <div className="nexo-focus-loading">
-              The immersive WebGL scene is unavailable on this device. The
-              command-bay fallback remains active.
+              {t(
+                "The immersive WebGL scene is unavailable on this device. The command-bay fallback remains active."
+              )}
             </div>
           )}
         </DialogContent>
