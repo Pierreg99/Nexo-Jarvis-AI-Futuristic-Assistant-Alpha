@@ -21,6 +21,7 @@
 - In-App-Benachrichtigungen für fällige Aufgaben anzeigen; Desktop-Benachrichtigungen sind optional, solange Nexo geöffnet ist.
 - Berechtigungen, Ergebnisse, Ausführungsverläufe und Audit-Protokolle im Terminal und Systemmonitor prüfen.
 - Englische oder deutsche Browser-Spracherkennung, auswählbare Stimme und einstellbare Sprachausgabe nutzen.
+- Den interaktiven 3D-Fusionskern mit eigens erstellter Detailgrafik erkunden; bei fehlendem WebGL bleibt eine leichtere 2D-Ansicht verfügbar.
 - Aktuelles Wetter und Schlagzeilen abrufen und den Standort in den Einstellungen festlegen.
 - Optional einen serverseitigen, OpenAI-kompatiblen KI-Anbieter für freie Gespräche einrichten. Anbieterschlüssel bleiben auf dem Server. KI-Antworten können keine Tools ausführen.
 - Die Oberfläche zwischen Englisch und Deutsch umschalten. Bei der ersten Nutzung übernimmt Nexo die Browsersprache und speichert die Auswahl im Browser.

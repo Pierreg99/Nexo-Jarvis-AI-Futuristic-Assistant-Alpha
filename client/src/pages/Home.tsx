@@ -54,6 +54,7 @@ import { getCurrentWeather, getLatestHeadlines } from "@shared/liveData";
 import { newId } from "@shared/nexo/store";
 import { useAssistant } from "@/hooks/useAssistant";
 import { useI18n } from "@/contexts/LanguageContext";
+import fusionCoreArtwork from "@/assets/nexo-fusion-core.webp";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import WorkspacePanels, {
   countdown,
@@ -810,19 +811,14 @@ export default function Home() {
                         }}
                         aria-hidden="true"
                       >
-                        <div className="core-depth-shell core-depth-shell-a" />
-                        <div className="core-depth-shell core-depth-shell-b" />
-                        <div className="core-depth-lens" />
-                        <i className="core-particle core-particle-a" />
-                        <i className="core-particle core-particle-b" />
-                        <i className="core-particle core-particle-c" />
+                        <img
+                          className="core-image"
+                          src={fusionCoreArtwork}
+                          alt=""
+                          draggable={false}
+                        />
                       </div>
                       <div className="orbit" />
-                      <img
-                        className="core-image"
-                        src={`${import.meta.env.BASE_URL}nexo-core.svg`}
-                        alt={t("Animated Nexo orbital core")}
-                      />
                       <div className="core-glare" aria-hidden="true" />
                     </>
                   )}
@@ -1119,7 +1115,9 @@ export default function Home() {
               <div>
                 <div className="technical-label">{t("Session duration")}</div>
                 <div className="mt-0.5 font-mono text-xs text-cyan-100/68">
-                  {new Date(Math.max(0, now.getTime() - sessionStartedAt.current))
+                  {new Date(
+                    Math.max(0, now.getTime() - sessionStartedAt.current)
+                  )
                     .toISOString()
                     .slice(11, 19)}
                 </div>
