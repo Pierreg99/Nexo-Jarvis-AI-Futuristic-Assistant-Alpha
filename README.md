@@ -21,7 +21,7 @@
 - See in-app notifications for completed tasks, with optional desktop notifications while Nexo is open.
 - Inspect tool permissions, results, traces, and audit history in the terminal and system monitor.
 - Use browser speech recognition in English or German, choose a voice, and adjust spoken output.
-- Explore the live 3D fusion core, built around custom high-detail artwork; a lighter 2D scene remains available when WebGL is unavailable.
+- Watch the state-reactive 3D fusion core: plasma filaments and magnetic field rings shift with listening, thinking, and speaking; a lighter 2D scene remains available when WebGL is unavailable.
 - Check current weather and headlines; configure location in settings.
 - Add an optional server-side OpenAI-compatible conversation provider. Provider keys stay on the server, and assistant replies cannot run tools.
 - Switch the interface between English and German. Nexo follows the browser language on first use and remembers the selection in the browser.

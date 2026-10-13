@@ -102,13 +102,185 @@ function OrbitRing({
       <meshPhysicalMaterial
         color={color}
         emissive={color}
-        emissiveIntensity={0.2}
+        emissiveIntensity={0.42}
         metalness={0.96}
         roughness={0.24}
         clearcoat={0.8}
         clearcoatRoughness={0.2}
       />
     </mesh>
+  );
+}
+
+function createPlasmaTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  if (!context) return new THREE.CanvasTexture(canvas);
+
+  const veil = context.createLinearGradient(0, 0, 0, canvas.height);
+  veil.addColorStop(0, "rgba(255,255,255,0)");
+  veil.addColorStop(0.2, "rgba(255,255,255,0.12)");
+  veil.addColorStop(0.38, "rgba(255,255,255,0.44)");
+  veil.addColorStop(0.5, "rgba(255,255,255,0.92)");
+  veil.addColorStop(0.62, "rgba(255,255,255,0.44)");
+  veil.addColorStop(0.8, "rgba(255,255,255,0.12)");
+  veil.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = veil;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.globalCompositeOperation = "lighter";
+
+  // Seamless curved filaments turn the torus into a band of moving plasma.
+  for (let strand = 0; strand < 46; strand += 1) {
+    const cycles = 2 + (strand % 7);
+    const phase = strand * 1.71;
+    const amplitude = 0.015 + ((strand * 13) % 19) / 150;
+    context.beginPath();
+    for (let x = 0; x <= canvas.width; x += 8) {
+      const progress = x / canvas.width;
+      const y =
+        canvas.height *
+        (0.5 +
+          Math.sin(progress * Math.PI * 2 * cycles + phase) * amplitude +
+          Math.sin(progress * Math.PI * 2 * (cycles + 3) - phase) * 0.025);
+      if (x === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.strokeStyle = `rgba(255,255,255,${0.06 + (strand % 5) * 0.035})`;
+    context.lineWidth = strand % 9 === 0 ? 3 : strand % 3 === 0 ? 1.8 : 1;
+    context.stroke();
+  }
+
+  for (let flare = 0; flare < 18; flare += 1) {
+    const x = ((flare * 223 + 71) % canvas.width) + 0.5;
+    const y = canvas.height * (0.5 + Math.sin(flare * 2.4) * 0.13);
+    const radius = 4 + (flare % 5) * 1.8;
+    const halo = context.createRadialGradient(x, y, 0, x, y, radius);
+    halo.addColorStop(0, "rgba(255,255,255,0.7)");
+    halo.addColorStop(1, "rgba(255,255,255,0)");
+    context.fillStyle = halo;
+    context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function PlasmaBand({
+  state,
+  reducedMotion,
+  color,
+  speed,
+}: {
+  state: NexoCoreState;
+  reducedMotion: boolean;
+  color: string;
+  speed: number;
+}) {
+  const material = useRef<THREE.MeshBasicMaterial>(null);
+  const texture = useMemo(createPlasmaTexture, []);
+  const baseOpacity =
+    state === "thinking" ? 0.76 : state === "listening" ? 0.62 : 0.54;
+
+  useEffect(() => () => texture.dispose(), [texture]);
+  useFrame(({ clock }, delta) => {
+    if (!reducedMotion)
+      texture.offset.x = (texture.offset.x + delta * speed + 1) % 1;
+    if (material.current) {
+      const shimmer = reducedMotion
+        ? 0
+        : Math.sin(clock.elapsedTime * (2 + speed * 8)) * 0.055;
+      material.current.opacity = baseOpacity + shimmer;
+    }
+  });
+
+  return (
+    <mesh rotation={[1.18, 0.12, -0.3]} renderOrder={1}>
+      <torusGeometry args={[1.34, 0.084, 24, 192]} />
+      <meshBasicMaterial
+        ref={material}
+        map={texture}
+        color={color}
+        transparent
+        opacity={baseOpacity}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+        toneMapped={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+function FluxStream({
+  state,
+  reducedMotion,
+  radius,
+  tilt,
+  color,
+  speed,
+  phase,
+}: {
+  state: NexoCoreState;
+  reducedMotion: boolean;
+  radius: number;
+  tilt: [number, number, number];
+  color: string;
+  speed: number;
+  phase: number;
+}) {
+  const beads = useRef<(THREE.Group | null)[]>([]);
+  const activity =
+    state === "thinking" ? 1.16 : state === "speaking" ? 1.05 : 0.92;
+
+  useFrame(({ clock }) => {
+    const angle = phase + (reducedMotion ? 0 : clock.elapsedTime * speed);
+    beads.current.forEach((bead, index) => {
+      if (!bead) return;
+      const trailAngle = angle - index * 0.085;
+      bead.position.set(
+        radius * Math.cos(trailAngle),
+        radius * Math.sin(trailAngle),
+        Math.sin(trailAngle * 2) * 0.028
+      );
+      const pulse = reducedMotion
+        ? 1
+        : 0.9 + Math.sin(angle * 2 - index * 0.5) * 0.1;
+      bead.scale.setScalar((1 - index * 0.2) * pulse * activity);
+    });
+  });
+
+  return (
+    <group rotation={tilt}>
+      {[0, 1, 2, 3].map(index => (
+        <group
+          key={index}
+          ref={bead => {
+            beads.current[index] = bead;
+          }}
+        >
+          <mesh>
+            <sphereGeometry args={[index === 0 ? 0.074 : 0.056, 20, 20]} />
+            <meshBasicMaterial color={color} toneMapped={false} />
+          </mesh>
+          <mesh scale={2.15}>
+            <sphereGeometry args={[index === 0 ? 0.074 : 0.056, 16, 16]} />
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={0.16 - index * 0.025}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
   );
 }
 
@@ -123,6 +295,8 @@ function NexoMachine({
   const group = useRef<THREE.Group>(null);
   const core = useRef<THREE.Mesh>(null);
   const glow = useRef<THREE.PointLight>(null);
+  const fieldRing = useRef<THREE.Mesh>(null);
+  const outerHousingRing = useRef<THREE.Mesh>(null);
   const housingMaterial = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
@@ -141,18 +315,45 @@ function NexoMachine({
       group.current.rotation.y += delta * palette.speed * 0.18;
       group.current.rotation.x = Math.sin(elapsed * 0.27) * 0.09;
     }
+    if (!reducedMotion && fieldRing.current) {
+      fieldRing.current.rotation.z += delta * (0.08 + palette.speed * 0.22);
+    }
+    if (!reducedMotion && outerHousingRing.current) {
+      outerHousingRing.current.rotation.z -=
+        delta * (0.045 + palette.speed * 0.12);
+    }
     if (core.current) {
       const breathing = reducedMotion
         ? 1
         : 1 +
-          Math.sin(elapsed * (state === "thinking" ? 5.5 : 2.2)) *
-            (state === "thinking" ? 0.12 : 0.055);
+          Math.sin(
+            elapsed *
+              (state === "thinking" ? 5.5 : state === "listening" ? 1.8 : 2.2)
+          ) *
+            (state === "thinking"
+              ? 0.085
+              : state === "listening"
+                ? 0.035
+                : state === "speaking"
+                  ? 0.065
+                  : 0.025);
       core.current.scale.setScalar(breathing);
     }
     if (glow.current)
       glow.current.intensity = reducedMotion
         ? palette.intensity
-        : palette.intensity + Math.sin(elapsed * 3.1) * 0.35;
+        : palette.intensity +
+          Math.sin(
+            elapsed *
+              (state === "thinking" ? 5.2 : state === "listening" ? 1.8 : 3.1)
+          ) *
+            (state === "thinking"
+              ? 0.52
+              : state === "listening"
+                ? 0.13
+                : state === "speaking"
+                  ? 0.3
+                  : 0.16);
   });
 
   return (
@@ -206,18 +407,19 @@ function NexoMachine({
           clearcoatRoughness={0.2}
         />
       </mesh>
-      <mesh rotation={[0.66, -0.22, 0.44]}>
+      <mesh ref={fieldRing} rotation={[0.66, -0.22, 0.44]}>
         <torusGeometry args={[1.32, 0.014, 12, 128]} />
         <meshPhysicalMaterial
-          color="#9ce8e9"
+          color={palette.energy}
           emissive={palette.energy}
-          emissiveIntensity={0.34}
-          metalness={0.94}
-          roughness={0.22}
+          emissiveIntensity={1.15}
+          metalness={0.48}
+          roughness={0.2}
           clearcoat={1}
+          toneMapped={false}
         />
       </mesh>
-      <mesh rotation={[-0.4, 0.86, -0.1]}>
+      <mesh ref={outerHousingRing} rotation={[-0.4, 0.86, -0.1]}>
         <torusGeometry args={[1.47, 0.024, 16, 128]} />
         <meshPhysicalMaterial
           color="#5c6c6d"
@@ -240,6 +442,31 @@ function NexoMachine({
         <sphereGeometry args={[0.31, 48, 48]} />
         <meshBasicMaterial color="#fff7e7" transparent opacity={0.68} />
       </mesh>
+
+      <PlasmaBand
+        state={state}
+        reducedMotion={reducedMotion}
+        color={palette.energy}
+        speed={0.04 + palette.speed * 0.13}
+      />
+      <FluxStream
+        state={state}
+        reducedMotion={reducedMotion}
+        radius={1.34}
+        tilt={[1.18, 0.12, -0.3]}
+        color={state === "thinking" ? "#ffe0af" : "#d7ffff"}
+        speed={0.25 + palette.speed * 1.1}
+        phase={0.25}
+      />
+      <FluxStream
+        state={state}
+        reducedMotion={reducedMotion}
+        radius={1.56}
+        tilt={[-0.42, 0.88, 0.18]}
+        color={state === "thinking" ? "#ffb966" : "#6dd5dd"}
+        speed={-(0.2 + palette.speed * 0.82)}
+        phase={2.2}
+      />
 
       <OrbitRing
         radius={1.76}
@@ -293,6 +520,14 @@ export default function NexoCore3D({
 }: NexoCore3DProps) {
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
+  const reactorEnergy =
+    state === "thinking"
+      ? "#ffc078"
+      : state === "listening"
+        ? "#bafaff"
+        : state === "speaking"
+          ? "#78e2eb"
+          : "#61d9e2";
   return (
     <div
       className={`nexo-webgl-scene nexo-core-state-${state} ${immersive ? "nexo-webgl-scene-immersive" : ""}`}
@@ -344,6 +579,58 @@ export default function NexoCore3D({
         aria-hidden="true"
         draggable={false}
       />
+      <div
+        className="reactor-field-overlay"
+        aria-hidden="true"
+        style={{ color: reactorEnergy }}
+      >
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <g className="reactor-field-orbit reactor-field-orbit-primary">
+            <ellipse
+              className="reactor-field-track"
+              cx="50"
+              cy="50"
+              rx="36"
+              ry="13"
+              transform="rotate(-7 50 50)"
+            />
+            <ellipse
+              className="reactor-field-runner"
+              cx="50"
+              cy="50"
+              rx="36"
+              ry="13"
+              transform="rotate(-7 50 50)"
+            />
+            <circle className="reactor-field-node" cx="86" cy="50" r="0.8" />
+            <circle
+              className="reactor-field-node reactor-field-node-trail"
+              cx="83"
+              cy="48"
+              r="0.45"
+            />
+          </g>
+          <g className="reactor-field-orbit reactor-field-orbit-secondary">
+            <ellipse
+              className="reactor-field-track"
+              cx="50"
+              cy="50"
+              rx="18"
+              ry="38"
+              transform="rotate(34 50 50)"
+            />
+            <ellipse
+              className="reactor-field-runner"
+              cx="50"
+              cy="50"
+              rx="18"
+              ry="38"
+              transform="rotate(34 50 50)"
+            />
+            <circle className="reactor-field-node" cx="50" cy="12" r="0.58" />
+          </g>
+        </svg>
+      </div>
       <div className="nexo-webgl-vignette" aria-hidden="true" />
       {!reducedMotion && (
         <div className="nexo-webgl-reticle" aria-hidden="true">
