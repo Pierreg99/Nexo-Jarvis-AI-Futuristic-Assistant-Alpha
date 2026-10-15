@@ -80,6 +80,12 @@ Local APK: `artifacts/nexo-jarvis-1.0.0-alpha.2-debug.apk` (2,190,750 bytes). SH
 
 The [Android workflow](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/android.yml) runs TypeScript/tests, builds the APK, and uploads the APK, checksum, and lint report for 30 days.
 
+## Published verification
+
+Revision `dbd8254` passed the [quality workflow](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/runs/38722713427), [web deployment](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/runs/38722713439), and [Android workflow](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/runs/38722713384).
+
+[Download the Android alpha 2 artifact ZIP](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/runs/38722713384/artifacts/11966522434). It contains the APK, its checksum, and the Android lint report. Artifact retention is 30 days; run the workflow again after expiry. Live provider consent/playback and physical-device checks remain separate from these build results.
+
 ## Next actions
 
 1. Configure real OAuth registrations and speech credentials on a trusted HTTPS server; verify consent, sign-in, account isolation across devices, sign-out, and paid provider playback.

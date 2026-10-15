@@ -1,6 +1,6 @@
 # Screenshot gallery
 
-These images show the current turbine/location/account update with the reactor image backdrop removed. They were captured on **15 October 2026** in Chromium with the Europe/Berlin time zone and exported as WebP.
+These images show the current turbine/location/account update with the reactor image backdrop removed. The captured interface is included in revision `dbd8254`. They were captured on **15 October 2026** in Chromium with the Europe/Berlin time zone and exported as WebP.
 
 | File                                                   | View                                                        | Viewport    | Language |
 | ------------------------------------------------------ | ----------------------------------------------------------- | ----------- | -------- |
