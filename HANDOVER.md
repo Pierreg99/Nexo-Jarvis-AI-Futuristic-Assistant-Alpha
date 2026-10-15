@@ -89,6 +89,12 @@ SHA-256:
 
 The APK and its checksum are generated artifacts, excluded from Git. The Android workflow produces its own debug-signed artifact; its checksum can differ because build timestamps and debug signing keys vary. The offline smoke check verifies the packaged web client in Chromium, not the Android activity lifecycle or hardware rendering.
 
+## GitHub build artifact
+
+The [Android workflow run](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/runs/38717753346) passed for commit `5176c02`. It ran TypeScript checks, all 49 tests, the Android build, and Android lint, then uploaded the APK, checksum, and lint report.
+
+[Download the debug artifact ZIP](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/runs/38717753346/artifacts/11963129718). Extract the APK from its `artifacts/` directory. GitHub retains this artifact for 30 days; use the Android workflow to build a fresh one after expiry.
+
 ## Known limits and next action
 
 The APK has no native speech bridge, background alarm service, native notifications, automatic location permission, or remote-server selector. Use text input and manual weather coordinates. Foreground timers are available; Android suspension can delay delivery until reopening. Physical-device startup and persistence checks remain required before calling this release-ready.

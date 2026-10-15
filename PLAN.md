@@ -11,7 +11,7 @@ This is the current project plan. [HANDOVER.md](HANDOVER.md) records the deliver
 | Changelog and operational handover | Implemented | Historical entries retained; current changes and remaining work distinguished                  |
 | Android wrapper and build script   | Implemented | Bundled root-path web client, local storage, external links, Back handling, and adaptive icon  |
 | APK verification                   | Verified    | `assembleDebug`, Android lint, APK signature, and bundled assets checked                       |
-| Android CI                         | Implemented | Workflow uploads a debug APK, checksum, and lint report after checks                           |
+| Android CI                         | Verified    | Workflow uploads a debug APK, checksum, and lint report after checks                           |
 | Physical-device acceptance         | Pending     | Checklist in [docs/ANDROID.md](docs/ANDROID.md) completed on Android hardware                  |
 
 ## Next: Android release readiness
