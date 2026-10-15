@@ -21,6 +21,7 @@
 - In-App-Benachrichtigungen für fällige Aufgaben anzeigen; Desktop-Benachrichtigungen sind optional, solange Nexo geöffnet ist.
 - Berechtigungen, Ergebnisse, Ausführungsverläufe und Audit-Protokolle im Terminal und Systemmonitor prüfen.
 - Englische oder deutsche Browser-Spracherkennung, auswählbare Stimme und einstellbare Sprachausgabe nutzen.
+- Den Reaktor durch Ziehen drehen und mit dem Mausrad zoomen; die Ansicht bleibt bis zum nächsten Zustandswechsel manuell steuerbar. Partikelströme wechseln ihre Geschwindigkeit ohne Positionssprünge. Die Einstellung für reduzierte Bewegung gilt ab dem ersten Rendern.
 - Den zustandsabhängig animierten 3D-Fusionskern erleben: Plasmaströme und Magnetfeldringe reagieren auf Zuhören, Nachdenken und Sprechen. Bei fehlendem WebGL bleibt eine leichtere 2D-Ansicht verfügbar.
 - Aktuelles Wetter und Schlagzeilen abrufen und den Standort in den Einstellungen festlegen.
 - Optional einen serverseitigen, OpenAI-kompatiblen KI-Anbieter für freie Gespräche einrichten. Anbieterschlüssel bleiben auf dem Server. KI-Antworten können keine Tools ausführen.

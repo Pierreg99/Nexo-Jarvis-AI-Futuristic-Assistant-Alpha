@@ -550,6 +550,7 @@
 
 .reactor-field-runner {
   stroke-width: 1.08;
+  --reactor-flux-period: -193;
   stroke-dasharray: 13 180;
   stroke-dashoffset: 0;
   opacity: 0.96;
@@ -559,6 +560,7 @@
 
 .reactor-field-orbit-secondary .reactor-field-runner {
   stroke-width: 0.7;
+  --reactor-flux-period: -178;
   stroke-dasharray: 8 170;
   opacity: 0.8;
   animation-duration: 5.4s;
@@ -632,7 +634,7 @@
 
 @keyframes reactor-flux-travel {
   to {
-    stroke-dashoffset: -193;
+    stroke-dashoffset: var(--reactor-flux-period, -193);
   }
 }
 

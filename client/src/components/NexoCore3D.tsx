@@ -6,7 +6,7 @@ import {
   Stars,
 } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import * as THREE from "three";
 import fusionCoreArtwork from "@/assets/nexo-fusion-core.webp";
 
@@ -28,7 +28,11 @@ const statePalette: Record<
 };
 
 function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setReduced(query.matches);
@@ -42,36 +46,50 @@ function useReducedMotion() {
 function CameraResponse({
   state,
   reducedMotion,
+  immersive,
+  manualControl,
 }: {
   state: NexoCoreState;
   reducedMotion: boolean;
+  immersive: boolean;
+  manualControl: RefObject<boolean>;
 }) {
   const { camera } = useThree();
   const perspectiveCamera = camera as THREE.PerspectiveCamera;
   const target = useMemo(
     () =>
       ({
-        idle: new THREE.Vector3(0, 0.1, 6.8),
+        idle: new THREE.Vector3(0, 0.1, immersive ? 6.2 : 6.8),
         listening: new THREE.Vector3(-0.32, 0.18, 6.25),
         thinking: new THREE.Vector3(0.26, 0.42, 5.6),
         speaking: new THREE.Vector3(0, -0.18, 5.95),
       })[state],
-    [state]
+    [state, immersive]
   );
 
+  const targetFov =
+    state === "thinking"
+      ? 35
+      : state === "listening"
+        ? 40
+        : immersive
+          ? 38
+          : 42;
+  useEffect(() => {
+    manualControl.current = false;
+  }, [state, immersive, manualControl]);
+
   useFrame((_, delta) => {
+    if (manualControl.current) return;
     if (reducedMotion) {
       perspectiveCamera.position.copy(target);
-      perspectiveCamera.fov =
-        state === "thinking" ? 35 : state === "listening" ? 40 : 42;
+      perspectiveCamera.fov = targetFov;
       perspectiveCamera.updateProjectionMatrix();
       return;
     }
     perspectiveCamera.position.lerp(target, 1 - Math.exp(-delta * 1.65));
     perspectiveCamera.fov +=
-      ((state === "thinking" ? 35 : state === "listening" ? 40 : 42) -
-        perspectiveCamera.fov) *
-      (1 - Math.exp(-delta * 1.4));
+      (targetFov - perspectiveCamera.fov) * (1 - Math.exp(-delta * 1.4));
     perspectiveCamera.updateProjectionMatrix();
   });
   return null;
@@ -235,11 +253,24 @@ function FluxStream({
   phase: number;
 }) {
   const beads = useRef<(THREE.Group | null)[]>([]);
+  const orbitPhase = useRef(phase);
+  const orbitSpeed = useRef(speed);
   const activity =
     state === "thinking" ? 1.16 : state === "speaking" ? 1.05 : 0.92;
 
-  useFrame(({ clock }) => {
-    const angle = phase + (reducedMotion ? 0 : clock.elapsedTime * speed);
+  useFrame((_, delta) => {
+    if (!reducedMotion) {
+      const step = Math.min(delta, 0.05);
+      orbitSpeed.current = THREE.MathUtils.damp(
+        orbitSpeed.current,
+        speed,
+        3,
+        step
+      );
+      orbitPhase.current =
+        (orbitPhase.current + step * orbitSpeed.current) % (Math.PI * 2);
+    }
+    const angle = orbitPhase.current;
     beads.current.forEach((bead, index) => {
       if (!bead) return;
       const trailAngle = angle - index * 0.085;
@@ -520,6 +551,7 @@ export default function NexoCore3D({
 }: NexoCore3DProps) {
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
+  const manualControl = useRef(false);
   const reactorEnergy =
     state === "thinking"
       ? "#ffc078"
@@ -551,7 +583,12 @@ export default function NexoCore3D({
         <fog attach="fog" args={["#05090c", 5.5, 13]} />
         <ambientLight intensity={0.34} color="#b1c9c9" />
         <NexoMachine state={state} reducedMotion={reducedMotion} />
-        <CameraResponse state={state} reducedMotion={reducedMotion} />
+        <CameraResponse
+          state={state}
+          reducedMotion={reducedMotion}
+          immersive={immersive}
+          manualControl={manualControl}
+        />
         <ContactShadows
           position={[0, -2.25, 0]}
           opacity={0.58}
@@ -561,6 +598,9 @@ export default function NexoCore3D({
           color="#001e2a"
         />
         <OrbitControls
+          onStart={() => {
+            manualControl.current = true;
+          }}
           enablePan={false}
           enableDamping={!reducedMotion}
           dampingFactor={0.08}
