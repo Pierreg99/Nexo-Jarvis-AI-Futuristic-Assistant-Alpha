@@ -1,5 +1,6 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
+import { readAccount } from "../account";
 import { sdk } from "./sdk";
 import { parse } from "cookie";
 import { randomUUID } from "node:crypto";
@@ -10,16 +11,18 @@ export type TrpcContext = {
   res: CreateExpressContextOptions["res"];
   user: User | null;
   workspaceId?: string;
+  accountId?: string;
 };
 
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
-  let user: User | null = null;
+  let user: User | null = await readAccount(opts.req);
+  const accountId = user?.openId;
   const cookies = parse(opts.req.headers.cookie ?? "");
 
   try {
-    if (cookies[COOKIE_NAME] || opts.req.headers.authorization)
+    if (!user && (cookies[COOKIE_NAME] || opts.req.headers.authorization))
       user = await sdk.authenticateRequest(opts.req);
   } catch (error) {
     // Authentication is optional for public procedures.
@@ -49,5 +52,6 @@ export async function createContext(
     res: opts.res,
     user,
     workspaceId,
+    accountId,
   };
 }

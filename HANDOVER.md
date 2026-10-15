@@ -2,46 +2,45 @@
 
 ## Current delivery
 
-Nexo Jarvis is a React/TypeScript personal command workspace with a Three.js reactor, English/German UI, a shared browser/server command engine, and optional server-side AI conversations. This delivery refreshes the documentation and screenshot gallery and adds a bundled Android alpha app.
+Nexo now includes an instanced metallic turbine, quality/frame controls, visibility-aware rendering, city search, explicit GPS, OpenAI/ElevenLabs speech output, and Google/Microsoft sign-in with persistent server workspace sync. English and German UI strings, setup guidance, and screenshots cover these additions.
 
-The Android application is `ai.nexo.jarvis`, version `1.0.0-alpha.1` (version code 1), targeting API 35 with Android 8.0 as the minimum. It uses AndroidX WebKit to serve bundled client assets over a local HTTPS origin. The default output is debug-signed and intended for evaluation.
+Android is `ai.nexo.jarvis`, **1.0.0-alpha.2** (version code 2), minimum API 26 / Android 8.0, target API 35. The debug APK bundles the local client and adds approximate location permission. It does not connect to a remote account/voice server.
 
 ## Start here
 
-| Document                                                 | Purpose                                                         |
-| -------------------------------------------------------- | --------------------------------------------------------------- |
-| [README.md](README.md) / [README.de.md](README.de.md)    | Product overview, gallery, setup, commands, and deployment      |
-| [CHANGELOG.md](CHANGELOG.md)                             | Current changes and retained historical entries                 |
-| [PLAN.md](PLAN.md)                                       | Active delivery plan, remaining work, and acceptance criteria   |
-| [docs/ANDROID.md](docs/ANDROID.md)                       | APK build, install, behavior, limitations, and device checklist |
-| [docs/screenshots/README.md](docs/screenshots/README.md) | Capture provenance and refresh instructions                     |
-| [.env.example](.env.example)                             | Optional server configuration                                   |
+| Document                                                 | Purpose                                                   |
+| -------------------------------------------------------- | --------------------------------------------------------- |
+| [README.md](README.md) / [README.de.md](README.de.md)    | Overview, gallery, setup, commands, deployment            |
+| [docs/PROVIDERS.md](docs/PROVIDERS.md)                   | Location, speech keys, OAuth registrations, sync behavior |
+| [docs/PERFORMANCE.md](docs/PERFORMANCE.md)               | Rendering changes, quality modes, measurement method      |
+| [docs/ANDROID.md](docs/ANDROID.md)                       | APK build/install and device acceptance                   |
+| [CHANGELOG.md](CHANGELOG.md) / [PLAN.md](PLAN.md)        | Delivered changes and remaining work                      |
+| [docs/screenshots/README.md](docs/screenshots/README.md) | Capture provenance and refresh instructions               |
+| [.env.example](.env.example)                             | Optional server credentials and configuration             |
 
-Older `NEXO2_*`, `PROGRESS.md`, and prototype design/check files are historical working notes. Use the documents above for the current state.
+Older `NEXO2_*`, `PROGRESS.md`, and prototype check files remain historical working notes.
 
-## Key implementation paths
+## Key paths and design decisions
 
-| Path                                                         | Responsibility                                                    |
-| ------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `client/src/pages/Home.tsx`                                  | Command bay, reactor state, navigation, and information panels    |
-| `client/src/components/NexoCore3D.tsx`                       | Three.js reactor, plasma, particle motion, and camera controls    |
-| `client/src/nexo-polish.css`                                 | Current visual refinements and CSS reactor overlays               |
-| `client/src/components/WorkspacePanels.tsx`                  | Notes, timers, preferences, and other workspace dialogs           |
-| `client/src/hooks/useAssistant.ts`                           | Browser/server selection and workspace operations                 |
-| `shared/nexo/`                                               | Command parsing, tools, schemas, storage contracts, and reminders |
-| `shared/i18n.ts`                                             | Shared translations and formatting                                |
-| `server/`                                                    | Node.js API, storage, scheduling, and provider integration        |
-| `android/app/src/main/java/ai/nexo/jarvis/MainActivity.java` | Local HTTPS assets, WebView settings, navigation, and lifecycle   |
-| `scripts/build-android.mjs`                                  | Fresh web build, Android build/lint, and APK/checksum output      |
+- `client/src/components/NexoCore3D.tsx`: instanced vanes, procedural reflections, frame scheduler, camera, and visibility controls. The clock advances only while rendering and clamps resume deltas.
+- `client/src/hooks/usePreferences.ts`: backward-compatible defaults for quality, voice provider, voice selection, and location label.
+- `client/src/components/LocationControls.tsx`: bounded city search and explicit geolocation. The dashboard does not request GPS on startup.
+- `client/src/hooks/useSpeechOutput.ts`: shared playback/cancellation, browser voice selection, provider requests, and temporary audio URL cleanup.
+- `server/voice.ts`: configured providers, validated voice selection, request quotas, and bounded audio. All keys come from server environment variables.
+- `server/account.ts`: OAuth state, PKCE, verified provider identity, and signed seven-day sessions. Access/refresh tokens are not stored.
+- `server/_core/context.ts`: authenticated native OAuth profiles expose their verified identity as `ctx.accountId`. Their compatible `User` view has `id: 0`; workspace and quota isolation must use `accountId`, never that placeholder numeric ID. Legacy Manus/SQL users retain their existing actor keys.
+- `server/routers.ts`: account capabilities, paid voice access, workspace isolation, and explicit note import with duplicate skipping.
+- `client/src/hooks/useAssistant.ts`: visible server workspaces poll every ten seconds and refresh on focus. Existing revision guards protect in-flight client operations from stale refreshes.
+- `android/app/src/main/java/ai/nexo/jarvis/MainActivity.java`: local HTTPS assets, external links, lifecycle, Back, and origin-restricted approximate location permission requests.
 
-## Local workflows
+## Run and configure
 
 ```bash
 corepack pnpm install --frozen-lockfile
 corepack pnpm dev
 ```
 
-For verification:
+Built-in commands, browser voices, city search, and local storage work without credentials. Configure the server-only values in `.env` for natural voices and OAuth, then restart the server. Exact callback URLs and provider instructions are in the provider guide. Provider buttons stay disabled until their configuration is available.
 
 ```bash
 corepack pnpm check
@@ -50,55 +49,42 @@ corepack pnpm build
 corepack pnpm android:build
 ```
 
-The Android command additionally needs JDK 21 and Android SDK Platform/Build Tools 35. See the Android guide for SDK setup. This workspace uses the existing dependency installation via npm scripts when the host's global pnpm version differs from the repository-pinned version; repository setup and CI should use the pinned pnpm version.
+Android builds additionally require JDK 21 and Android SDK Platform/Build Tools 35. The workspace uses npm scripts against its installed dependencies when the global pnpm version differs; fresh setup and CI use the repository-pinned pnpm version.
 
-## Data and configuration
+## Data and sync
 
-- Static web mode stores its workspace in that browser profile's `localStorage`.
-- Android stores its workspace in WebView-local storage at the app's local origin. It does not synchronize with the website or server. Uninstalling or clearing app data removes it; OS backup is disabled.
-- Server workspaces live in `NEXO_DATA_DIR`, default `.nexo-data/`. Keep that directory persistent and backed up. Current scheduling assumes a single server process.
-- Provider keys remain server-side. Do not place secrets in `VITE_*` variables or Android assets.
-- `android/local.properties`, build outputs, SDKs, signing keys, and `artifacts/` are not tracked.
-- The Android Gradle wrapper is pinned with a distribution SHA-256. Gradle copies only `dist/public/` into generated APK assets.
+- Browser profiles and the standalone APK each keep independent local workspaces/preferences.
+- OAuth workspaces use the verified provider/subject as their stable actor. The same provider/account on the same server accesses the same persisted file across devices.
+- Different providers remain separate even when email addresses match. This delivery does not connect external calendars or link accounts.
+- Pre-login notes can be copied explicitly into the signed-in workspace; timers remain in their original workspace. Browser preferences are not synchronized.
+- Server data lives under `NEXO_DATA_DIR` (default `.nexo-data/`). Keep it persistent and backed up. This is a single-process store and scheduler.
+- Session signing secrets must remain stable. Rotating the secret invalidates sessions; users can sign in again without changing their account workspace identity.
+- Keys, signing material, SDKs, workspace files, generated Android assets, and `artifacts/` are excluded from Git.
 
 ## Verification record
 
-The screenshot gallery was captured from web revision `165dfdd` on 15 October 2026. The desktop capture used the running production build and real public news responses; sample notes were entered through the UI. Knowledge/settings captures used reduced motion. The mobile viewport was emulated, not photographed on Android hardware.
+| Check                                      | Result                                                                                                                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TypeScript                                 | Passed                                                                                                                                                                                                 |
+| Tests                                      | 61 passed across 9 files, including OAuth identity/state/PKCE, workspace isolation/import, and speech access/provider/quota tests                                                                      |
+| Production build                           | Passed; existing large-chunk advisory remains                                                                                                                                                          |
+| Rendering counters                         | 76 → 31 draw calls and 266,314 → 39,378 submitted triangles per sampled frame; see performance guide for limits                                                                                        |
+| Browser interaction                        | No startup GPS; city selection, explicit GPS, mocked natural-audio transport/playback, saved quality/language, paused rendering behind panels, and mobile overflow checks passed; no JavaScript errors |
+| Android build and lint                     | Alpha 2 built successfully; lint reports no issues                                                                                                                                                     |
+| APK signature                              | Verified, debug certificate, APK Signature Scheme v2                                                                                                                                                   |
+| Android permissions                        | Internet and approximate location; no fine-location or microphone permission                                                                                                                           |
+| Live Google/Microsoft/provider credentials | Not supplied; tested with signed fixture identities and controlled provider responses                                                                                                                  |
+| Physical Android device / emulator         | Not run; GPS permission, lifecycle, rendering, and battery acceptance remain pending                                                                                                                   |
 
-| Check                                 | Result                                                                                                                                                                                                             |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| TypeScript (`npm run check`)          | Passed                                                                                                                                                                                                             |
-| Existing test suite (`npm test`)      | 49 tests passed across 7 files                                                                                                                                                                                     |
-| Production client build               | Passed; existing large-chunk warning remains                                                                                                                                                                       |
-| Android clean build (`assembleDebug`) | Passed                                                                                                                                                                                                             |
-| Android lint (`lintDebug`)            | No issues found                                                                                                                                                                                                    |
-| APK signature (`apksigner verify`)    | Verified, debug certificate, APK Signature Scheme v2                                                                                                                                                               |
-| APK package metadata                  | `ai.nexo.jarvis`, version code 1, minimum SDK 26, target SDK 35, Internet permission only                                                                                                                          |
-| APK contents                          | ZIP integrity passed; bundled assets match the offline-tested client; no `.env` or server workspace files                                                                                                          |
-| Offline client smoke check            | Extracted APK assets loaded at the same HTTPS origin in Chromium with external requests blocked; note creation/persistence, German preference persistence, and mobile overflow checks passed; no JavaScript errors |
-| Documentation                         | Local links resolve; screenshots inspected                                                                                                                                                                         |
-| Physical Android device / emulator    | Not run in this environment; acceptance remains pending                                                                                                                                                            |
+Local APK: `artifacts/nexo-jarvis-1.0.0-alpha.2-debug.apk` (2,190,750 bytes). SHA-256: `1db76b071ad30a98fabf1fedb75f87b652459257db6c37acf4c7278f056afc10`. Its generated `.sha256` file records the same checksum. CI creates a separately debug-signed artifact whose checksum can differ.
 
-Local APK: `artifacts/nexo-jarvis-1.0.0-alpha.1-debug.apk` (2,161,320 bytes).
+The [Android workflow](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/android.yml) runs TypeScript/tests, builds the APK, and uploads the APK, checksum, and lint report for 30 days.
 
-SHA-256:
+## Next actions
 
-```text
-7785965dde542731bdcf77c62d7e7701d52408b17eb1c0c77d6c02ce69080cd5
-```
+1. Configure real OAuth registrations and speech credentials on a trusted HTTPS server; verify consent, sign-in, account isolation across devices, sign-out, and paid provider playback.
+2. Run the Android device checklist, including approximate-location grant/denial/revocation and keyboard/system-bar behavior.
+3. Measure GPU frame times, memory, thermals, and battery on representative phones before claiming device-level performance gains.
+4. Add portable workspace import/export for Android, native reminder/voice bridges, and a deliberate remote-server connection flow before extending cloud features to the standalone APK.
 
-The APK and its checksum are generated artifacts, excluded from Git. The Android workflow produces its own debug-signed artifact; its checksum can differ because build timestamps and debug signing keys vary. The offline smoke check verifies the packaged web client in Chromium, not the Android activity lifecycle or hardware rendering.
-
-## GitHub build artifact
-
-The [Android workflow run](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/runs/38717753346) passed for commit `5176c02`. It ran TypeScript checks, all 49 tests, the Android build, and Android lint, then uploaded the APK, checksum, and lint report.
-
-[Download the debug artifact ZIP](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/runs/38717753346/artifacts/11963129718). Extract the APK from its `artifacts/` directory. GitHub retains this artifact for 30 days; use the Android workflow to build a fresh one after expiry.
-
-## Known limits and next action
-
-The APK has no native speech bridge, background alarm service, native notifications, automatic location permission, or remote-server selector. Use text input and manual weather coordinates. Foreground timers are available; Android suspension can delay delivery until reopening. Physical-device startup and persistence checks remain required before calling this release-ready.
-
-The existing production build emits a large-chunk warning for the Three.js bundle. Profile on real phones before selecting a performance strategy. Web speech and public data remain subject to platform support and network availability. External calendars remain disconnected.
-
-The next maintainer should start with the Android device checklist, record results, then implement export/import before establishing a persistent release-signing key. See [PLAN.md](PLAN.md) for acceptance criteria.
+See the plan for release signing, multi-instance storage, and other acceptance criteria.

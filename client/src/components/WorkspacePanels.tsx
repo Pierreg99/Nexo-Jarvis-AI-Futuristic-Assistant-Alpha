@@ -14,6 +14,10 @@ import type { Preferences } from "@/hooks/usePreferences";
 import { durationSeconds } from "@shared/nexo/commands";
 import type { MemoryRecord } from "@shared/nexo/types";
 import { useI18n } from "@/contexts/LanguageContext";
+import { trpc } from "@/lib/trpc";
+import { useSpeechOutput } from "@/hooks/useSpeechOutput";
+import LocationControls from "./LocationControls";
+import AccountConnections from "./AccountConnections";
 import LanguageSwitch from "@/components/LanguageSwitch";
 
 export type WorkspaceModule =
@@ -33,7 +37,10 @@ type Props = {
   onPreferences: (change: Partial<Preferences>) => void;
   onCommand: (command: string) => void;
   coordinates: { latitude: number; longitude: number } | null;
-  onCoordinates: (coordinates: { latitude: number; longitude: number }) => void;
+  onCoordinates: (
+    coordinates: { latitude: number; longitude: number },
+    name?: string
+  ) => void;
   now: Date;
 };
 const field =
@@ -72,6 +79,14 @@ export default function WorkspacePanels({
   now,
 }: Props) {
   const { t, date, schedule, errorText, notificationText } = useI18n();
+  const speechOutput = useSpeechOutput(preferences);
+  const voiceConfig = trpc.voice.capabilities.useQuery(undefined, {
+    enabled:
+      assistant.mode === "server" &&
+      (module === "settings" || module === "media"),
+    retry: false,
+    staleTime: 60000,
+  });
   const [search, setSearch] = useState("");
   const [note, setNote] = useState("");
   const [kind, setKind] = useState<MemoryRecord["kind"]>("note");
@@ -180,21 +195,19 @@ export default function WorkspacePanels({
     )
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const testVoice = () => {
-    if (!("speechSynthesis" in window)) {
-      toast.error(t("Speech output is unavailable in this browser."));
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(
-      preferences.language === "de-DE"
-        ? "Nexo ist bereit. Was möchtest du tun?"
-        : "Nexo is ready. What shall we focus on?"
-    );
-    utterance.lang = preferences.language;
-    utterance.rate = preferences.rate;
-    utterance.voice =
-      voices.find(voice => voice.voiceURI === preferences.voice) ?? null;
-    window.speechSynthesis.speak(utterance);
+    void speechOutput
+      .speak(
+        preferences.language === "de-DE"
+          ? "Nexo ist bereit. Was möchtest du tun?"
+          : "Nexo is ready. What shall we focus on?"
+      )
+      .catch(() =>
+        toast.error(
+          t(
+            "Speech playback failed. Check your voice provider or browser settings."
+          )
+        )
+      );
   };
 
   return (
@@ -651,6 +664,29 @@ export default function WorkspacePanels({
                   {t("Interface language")}
                   <LanguageSwitch />
                 </label>
+                <AccountConnections
+                  server={assistant.mode === "server"}
+                  notes={state.memory}
+                  readOnly={preferences.readOnly}
+                  onRefresh={assistant.refresh}
+                />
+                <label className="block text-xs">
+                  {t("Reactor quality")}
+                  <select
+                    className={`${field} mt-2`}
+                    value={preferences.renderQuality}
+                    onChange={e =>
+                      onPreferences({
+                        renderQuality: e.target
+                          .value as Preferences["renderQuality"],
+                      })
+                    }
+                  >
+                    <option value="auto">{t("Automatic")}</option>
+                    <option value="eco">{t("Battery saver")}</option>
+                    <option value="high">{t("High detail")}</option>
+                  </select>
+                </label>
                 <label className="block text-xs">
                   {t("Your name")}
                   <input
@@ -701,6 +737,16 @@ export default function WorkspacePanels({
                       ? `${coordinates.latitude.toFixed(3)}, ${coordinates.longitude.toFixed(3)}`
                       : t("Not set")}
                   </p>
+                  <LocationControls
+                    onSelect={(coordinates, name) => {
+                      onCoordinates(coordinates, name);
+                      setLatitude(String(coordinates.latitude));
+                      setLongitude(String(coordinates.longitude));
+                    }}
+                  />
+                  {preferences.locationName && (
+                    <p className="text-sm">{preferences.locationName}</p>
+                  )}
                   <form
                     onSubmit={event => {
                       event.preventDefault();
@@ -757,7 +803,7 @@ export default function WorkspacePanels({
                 checked={preferences.voiceEnabled}
                 onChange={event => {
                   onPreferences({ voiceEnabled: event.target.checked });
-                  if (!event.target.checked) window.speechSynthesis?.cancel();
+                  if (!event.target.checked) speechOutput.cancel();
                 }}
               />
               {t("Speak assistant responses")}
@@ -778,20 +824,84 @@ export default function WorkspacePanels({
               </select>
             </label>
             <label className="block text-xs">
-              {t("Voice")}
+              {t("Voice provider")}
               <select
-                value={preferences.voice}
-                onChange={event => onPreferences({ voice: event.target.value })}
                 className={`${field} mt-2`}
+                value={preferences.voiceProvider}
+                onChange={e => {
+                  speechOutput.cancel();
+                  const provider = e.target
+                    .value as Preferences["voiceProvider"];
+                  onPreferences({
+                    voiceProvider: provider,
+                    cloudVoice:
+                      voiceConfig.data?.providers.find(p => p.id === provider)
+                        ?.voices[0]?.id || "coral",
+                  });
+                }}
               >
-                <option value="">{t("Browser default")}</option>
-                {voices.map(voice => (
-                  <option key={voice.voiceURI} value={voice.voiceURI}>
-                    {voice.name} ({voice.lang})
+                <option value="browser">{t("Browser voices")}</option>
+                {(
+                  voiceConfig.data?.providers || [
+                    { id: "openai", configured: false, voices: [] },
+                    { id: "elevenlabs", configured: false, voices: [] },
+                  ]
+                ).map(provider => (
+                  <option
+                    key={provider.id}
+                    value={provider.id}
+                    disabled={
+                      !provider.configured || !voiceConfig.data?.allowed
+                    }
+                  >
+                    {provider.id === "openai" ? "OpenAI" : "ElevenLabs"}
+                    {!provider.configured ? ` · ${t("Not configured")}` : ""}
                   </option>
                 ))}
               </select>
             </label>
+            <p className="text-xs leading-relaxed text-cyan-100/55">
+              {t(
+                "Natural voices use your server’s OpenAI or ElevenLabs key. Spoken text is sent to that provider; API usage may be billed. Browser voices remain available without a key."
+              )}
+            </p>
+            {preferences.voiceProvider !== "browser" && (
+              <label className="block text-xs">
+                {t("Natural voice")}
+                <select
+                  className={`${field} mt-2`}
+                  value={preferences.cloudVoice}
+                  onChange={e => onPreferences({ cloudVoice: e.target.value })}
+                >
+                  {voiceConfig.data?.providers
+                    .find(p => p.id === preferences.voiceProvider)
+                    ?.voices.map(voice => (
+                      <option key={voice.id} value={voice.id}>
+                        {voice.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            )}
+            {preferences.voiceProvider === "browser" && (
+              <label className="block text-xs">
+                {t("Voice")}
+                <select
+                  value={preferences.voice}
+                  onChange={event =>
+                    onPreferences({ voice: event.target.value })
+                  }
+                  className={`${field} mt-2`}
+                >
+                  <option value="">{t("Browser default")}</option>
+                  {voices.map(voice => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name} ({voice.lang})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="block text-xs">
               {t("Speech speed ·")} {preferences.rate.toFixed(2)}
               <input
@@ -806,7 +916,17 @@ export default function WorkspacePanels({
                 className="mt-2 w-full accent-cyan-300"
               />
             </label>
-            <button className={button} onClick={testVoice}>
+            <button
+              className={button}
+              onClick={testVoice}
+              disabled={
+                preferences.voiceProvider !== "browser" &&
+                (!voiceConfig.data?.allowed ||
+                  !voiceConfig.data.providers.find(
+                    p => p.id === preferences.voiceProvider
+                  )?.configured)
+              }
+            >
               <Volume2 size={14} />
               {t("Test voice")}
             </button>

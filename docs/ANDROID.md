@@ -1,11 +1,11 @@
 # Android APK
 
-Nexo's Android app bundles the web client inside an Android WebView. The interface, reactor artwork, and command engine are included in the APK. Notes and preferences use WebView-local storage, independent of the website and Node.js server.
+Nexo's Android app bundles the web client inside an Android WebView. The interface, procedural reactor geometry, and command engine are included in the APK. Notes and preferences use WebView-local storage, independent of the website and Node.js server.
 
 | Property             | Value                                                                      |
 | -------------------- | -------------------------------------------------------------------------- |
 | Application ID       | `ai.nexo.jarvis`                                                           |
-| App version          | `1.0.0-alpha.1` / version code `1`                                         |
+| App version          | `1.0.0-alpha.2` / version code `2`                                         |
 | Minimum Android      | Android 8.0 / API 26                                                       |
 | Compile / target SDK | API 35                                                                     |
 | Java                 | JDK 21 recommended; source compatibility Java 17                           |
@@ -26,8 +26,8 @@ corepack pnpm android:build
 The build script creates a fresh root-path Vite build, runs `assembleDebug` and `lintDebug`, and copies these files into `artifacts/`:
 
 ```text
-nexo-jarvis-1.0.0-alpha.1-debug.apk
-nexo-jarvis-1.0.0-alpha.1-debug.apk.sha256
+nexo-jarvis-1.0.0-alpha.2-debug.apk
+nexo-jarvis-1.0.0-alpha.2-debug.apk.sha256
 ```
 
 Only `dist/public/` is bundled. The Node.js server, workspace files, and `.env` files are not copied. The script overrides `VITE_BASE_PATH` so a GitHub Pages prefix cannot break Android asset URLs. As with every Vite build, keep secrets out of `VITE_*` variables.
@@ -39,7 +39,7 @@ For Android Studio, run `corepack pnpm android:prepare` first, then open the `an
 With USB debugging enabled and a device connected:
 
 ```bash
-adb install -r artifacts/nexo-jarvis-1.0.0-alpha.1-debug.apk
+adb install -r artifacts/nexo-jarvis-1.0.0-alpha.2-debug.apk
 ```
 
 Alternatively, transfer the APK to the device, open it, and allow installation from that source when Android prompts. This is a debug-signed alpha build, not a Play Store release. Debug keys can differ between development machines and CI runs; Android rejects an update signed with a different key. Uninstalling the old build removes its local notes and preferences.
@@ -53,7 +53,7 @@ The workflow runs TypeScript checks, web tests, the Android build, and Android l
 ## Behavior and limits
 
 - **Local commands:** notes, timers, reminders, and preferences use the bundled engine and local storage. The reactor uses WebGL when the installed System WebView supports it.
-- **Network:** weather and news still need public HTTPS services. Configure weather coordinates manually; this wrapper does not request location access.
+- **Network:** weather and news still need public HTTPS services. City search and manual coordinates work without Android location permission. **Use my location** requests approximate location access when selected.
 - **Speech:** no native speech or microphone bridge is included. Do not assume a browser's speech APIs are available inside Android WebView. Text commands remain the supported input path.
 - **Reminders:** this build has no native alarms, background service, or notification bridge. Do not rely on reminders firing while the app is closed or Android suspends it; overdue tasks are checked on return.
 - **AI:** no server or provider key is bundled, and this build has no remote-server selection feature.
@@ -71,6 +71,7 @@ Before distributing a release, test on a real Android device:
 - Open and close panels with Android Back; check the keyboard and system-bar insets.
 - Check the reactor, immersive view, and fallback on devices with different GPU capabilities.
 - Open a news link and confirm it uses the external browser.
+- Grant, deny, and revoke approximate location permission; verify city search and manual coordinates remain available.
 - Verify foreground timers and overdue reminders after suspension.
 
 Release signing, Play Store metadata, native speech, native notifications, and background scheduling remain future work in [PLAN.md](../PLAN.md).

@@ -13,6 +13,10 @@ const schema = z.object({
         ? "de"
         : "en"
     ),
+  voiceProvider: z.enum(["browser", "openai", "elevenlabs"]).default("browser"),
+  cloudVoice: z.string().max(100).default("coral"),
+  locationName: z.string().max(200).default(""),
+  renderQuality: z.enum(["auto", "eco", "high"]).default("auto"),
   voice: z.string().max(200).default(""),
   rate: z.number().min(0.5).max(1.5).default(1),
   readOnly: z.boolean().default(false),

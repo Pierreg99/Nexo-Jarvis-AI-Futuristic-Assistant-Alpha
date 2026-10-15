@@ -1,6 +1,6 @@
 # Screenshot gallery
 
-These screenshots show the application at commit [`165dfdd`](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/commit/165dfdd), captured on **15 October 2026** with Chromium in the Europe/Berlin time zone. They are browser captures of the production build, exported as WebP.
+These images show the current turbine/location/account update with the reactor image backdrop removed. They were captured on **15 October 2026** in Chromium with the Europe/Berlin time zone and exported as WebP.
 
 | File                                                   | View                                                        | Viewport    | Language |
 | ------------------------------------------------------ | ----------------------------------------------------------- | ----------- | -------- |
@@ -15,9 +15,9 @@ These screenshots show the application at commit [`165dfdd`](https://github.com/
 - Browser-local mode, with no AI provider, account, or location configured.
 - Notes in the knowledge view were entered through the command input. They are sample content, not a user's private workspace.
 - Headlines are supplied by the application's public news service. Their content and availability change over time; no news responses were substituted for these captures.
-- Desktop, immersive, and mobile reactor views use WebGL. Knowledge and settings were captured with reduced motion enabled and transitions settled so the panels remain legible.
+- Desktop, immersive, and mobile reactor views use WebGL. Knowledge and settings views use the normal renderer paused behind their panels, with transitions settled for legibility.
 - The mobile capture uses a fresh German browser context. Its viewport is emulated; it is not a photograph or a hardware performance benchmark.
-- The screenshots contain no added interface elements. The reactor artwork itself is part of the application.
+- The screenshots contain no added interface elements. The turbine and its fallback are procedural; neither loads a reactor photo or image backdrop.
 
 ## Refresh the gallery
 
@@ -41,6 +41,6 @@ These screenshots show the application at commit [`165dfdd`](https://github.com/
 5. Enable reduced motion in the browser's rendering settings, reload, and open **Knowledge**. Capture after the panel opens. Switch to German and capture **Einstellungen**.
 6. Use a fresh German browser profile at **390 × 844**, with reduced motion off, for the mobile command bay. Wait for the WebGL scene before capturing.
 7. Export to WebP, preserving the viewport dimensions. Inspect every image for loading placeholders, clipped content, and private data before replacing the files.
-8. Update the capture commit and date above. Check that both root READMEs link to the same gallery.
+8. Update the capture revision description and date above. Check that both root READMEs link to the same gallery.
 
 The visible clock, news, animation pose, and execution timings will naturally differ between captures.

@@ -135,14 +135,8 @@ export function useAssistant() {
       }
     }, 1000);
     const serverTimer = setInterval(() => {
-      const state = workspaceRef.current;
-      if (
-        modeRef.current === "server" &&
-        (state.timers.some(item => item.status === "active") ||
-          state.automations.some(item => item.enabled))
-      )
-        void refresh();
-    }, 5000);
+      if (modeRef.current === "server" && !document.hidden) void refresh();
+    }, 10000);
     const onFocus = () => void refresh();
     const onStorage = (event: StorageEvent) => {
       if (

@@ -95,6 +95,15 @@ Timers accept seconds, minutes, hours, and combined durations up to seven days. 
 
 Browser and server storage are separate; switching modes does not synchronize your notes. Clearing browser site data removes the local workspace. Neither mode connects an external calendar provider yet.
 
+## Location, natural voices, and account sync
+
+- **Location:** search a city/postcode, enter coordinates, or explicitly request your current location. City search needs no API key. Android alpha 2 supports approximate location permission.
+- **Natural voices:** choose browser voices or server-configured OpenAI/ElevenLabs voices. Keys stay on the server; natural voices require sign-in by default.
+- **OAuth and sync:** sign in with Google or Microsoft on the Node server to use the same workspace across devices. Visible views refresh every ten seconds. Importing notes from before sign-in is an explicit choice.
+- **Performance:** instanced turbine vanes, static reflections, paused background rendering, and automatic/battery/high-detail modes. The controlled rendering check submitted about 59% fewer draw calls and 85% fewer triangles per frame.
+
+[Provider and OAuth setup](docs/PROVIDERS.md) · [Measurement method and quality modes](docs/PERFORMANCE.md).
+
 ## Android APK
 
 The Android alpha bundles this interface and its local command engine in a WebView app for **Android 8.0 or newer**. Notes and preferences stay on the device. Weather and news still require network access.
@@ -103,9 +112,9 @@ The Android alpha bundles this interface and its local command engine in a WebVi
 corepack pnpm android:build
 ```
 
-This requires JDK 21 and Android SDK 35. The output is `artifacts/nexo-jarvis-1.0.0-alpha.1-debug.apk`. The [Android workflow](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/android.yml) also makes the APK, checksum, and lint report downloadable after a successful run.
+This requires JDK 21 and Android SDK 35. The output is `artifacts/nexo-jarvis-1.0.0-alpha.2-debug.apk`. The [Android workflow](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/android.yml) also makes the APK, checksum, and lint report downloadable after a successful run.
 
-This is a debug-signed alpha. Native speech, background alarms, native notifications, and server selection are not included yet. [Build, installation, and limitations](docs/ANDROID.md).
+This is a debug-signed alpha. Native speech, background alarms, native notifications, and remote-server selection are not included yet. [Build, installation, and limitations](docs/ANDROID.md).
 
 ## Optional AI conversations
 

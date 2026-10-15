@@ -6,6 +6,53 @@ export const localeFor = (language: Language) =>
 
 /** English is the source language. User content and technical IDs are never translated. */
 export const german = {
+  "Choose location": "Standort auswählen",
+  "Choose a city or use your location for weather.":
+    "Wähle eine Stadt oder verwende deinen Standort für das Wetter.",
+  "City search uses Open-Meteo. GPS access starts only when you choose it.":
+    "Die Stadtsuche nutzt Open-Meteo. Standortzugriff startet erst, wenn du ihn auswählst.",
+  "Location access was denied or timed out. Use city search.":
+    "Standortzugriff wurde verweigert oder hat zu lange gedauert. Nutze die Stadtsuche.",
+  "Location is unavailable on this device. Use city search.":
+    "Standortbestimmung ist auf diesem Gerät nicht verfügbar. Nutze die Stadtsuche.",
+  "Use my location": "Meinen Standort verwenden",
+  "Location search is unavailable. Try coordinates or GPS.":
+    "Ortssuche nicht verfügbar. Nutze Koordinaten oder GPS.",
+  "No matching locations found.": "Keine passenden Orte gefunden.",
+  "Searching…": "Suche läuft…",
+  "Search city or postcode": "Stadt oder Postleitzahl suchen",
+  "Speech playback failed. Check your voice provider or browser settings.":
+    "Sprachausgabe fehlgeschlagen. Prüfe den Sprachanbieter oder die Browsereinstellungen.",
+  "Natural voices use your server’s OpenAI or ElevenLabs key. Spoken text is sent to that provider; API usage may be billed. Browser voices remain available without a key.":
+    "Natürliche Stimmen verwenden den OpenAI- oder ElevenLabs-Schlüssel deines Servers. Gesprochener Text wird an diesen Anbieter gesendet; API-Kosten können anfallen. Browserstimmen bleiben ohne Schlüssel verfügbar.",
+  "Not configured": "Nicht eingerichtet",
+  "Natural voice": "Natürliche Stimme",
+  "Browser voices": "Browserstimmen",
+  "Voice provider": "Sprachanbieter",
+  "High detail": "Hohe Details",
+  "Battery saver": "Energiesparmodus",
+  Automatic: "Automatisch",
+  "Reactor quality": "Reaktorqualität",
+  "Import failed. Your saved notes were preserved.":
+    "Import fehlgeschlagen. Deine gespeicherten Notizen bleiben erhalten.",
+  "Dismiss import": "Import verwerfen",
+  "Notes imported": "Notizen importiert",
+  "Import notes from this browser": "Notizen aus diesem Browser importieren",
+  "Notes from before sign-in are available in this browser. Importing adds notes and skips duplicates; timers stay in their original workspace.":
+    "Notizen vor der Anmeldung sind in diesem Browser verfügbar. Der Import fügt Notizen hinzu und überspringt Duplikate. Timer bleiben im ursprünglichen Arbeitsbereich.",
+  "Available after OAuth credentials are configured on the server.":
+    "Verfügbar, sobald OAuth-Zugangsdaten auf dem Server eingerichtet sind.",
+  "Sign in with {provider}": "Mit {provider} anmelden",
+  "Sign in on your Node server to open the same workspace on multiple devices. Local and guest workspaces stay separate.":
+    "Melde dich auf deinem Node-Server an, um denselben Arbeitsbereich auf mehreren Geräten zu nutzen. Lokale und Gast-Arbeitsbereiche bleiben getrennt.",
+  "Sign-out failed. Try again.":
+    "Abmeldung fehlgeschlagen. Versuche es erneut.",
+  "Sign out": "Abmelden",
+  "Sync now": "Jetzt synchronisieren",
+  "Workspace refreshed": "Arbeitsbereich aktualisiert",
+  "Your notes, timers, and reminders sync through this server. Other signed-in devices refresh every 10 seconds while visible.":
+    "Deine Notizen, Timer und Erinnerungen werden über diesen Server synchronisiert. Andere angemeldete Geräte aktualisieren den sichtbaren Arbeitsbereich alle 10 Sekunden.",
+  "Account & workspace sync": "Konto & Synchronisierung",
   "Interface language": "Sprache der Oberfläche",
   English: "Englisch",
   Deutsch: "Deutsch",

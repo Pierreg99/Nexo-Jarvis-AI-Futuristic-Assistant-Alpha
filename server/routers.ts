@@ -2,6 +2,13 @@
  * Nexo Jarvis tRPC contract.
  * Public live telemetry is read-only; calendar connections remain separately authorized.
  */
+import { ACCOUNT_COOKIE, accountProviders } from "./account";
+import {
+  voiceCapabilities,
+  speechInput,
+  synthesizeSpeech,
+  consumeSpeechQuota,
+} from "./voice";
 import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -30,11 +37,13 @@ async function performTool(assistant: Assistant, tool: string, input: unknown) {
 }
 
 const nexoProcedure = publicProcedure.use(({ ctx, next }) => {
-  const actor = ctx.user
-    ? `user:${ctx.user.id}`
-    : ctx.workspaceId
-      ? `guest:${ctx.workspaceId}`
-      : undefined;
+  const actor = ctx.accountId
+    ? `user:oidc:${ctx.accountId}`
+    : ctx.user
+      ? `user:${ctx.user.id}`
+      : ctx.workspaceId
+        ? `guest:${ctx.workspaceId}`
+        : undefined;
   if (!actor)
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -46,10 +55,39 @@ const idInput = z.object({ id: z.string().min(1).max(100) });
 
 export const appRouter = router({
   system: systemRouter,
+  voice: router({
+    capabilities: publicProcedure.query(({ ctx }) =>
+      voiceCapabilities(Boolean(ctx.user))
+    ),
+    synthesize: publicProcedure
+      .input(speechInput)
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user && process.env.NEXO_VOICE_ALLOW_GUESTS !== "true")
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Sign in to use natural voices.",
+          });
+        consumeSpeechQuota(
+          ctx.accountId ||
+            (ctx.user ? `user:${ctx.user.id}` : `guest:${ctx.workspaceId}`)
+        );
+        return synthesizeSpeech(input);
+      }),
+  }),
   auth: router({
+    connections: publicProcedure.query(({ ctx }) => ({
+      providers: accountProviders(),
+      user: ctx.user ? { name: ctx.user.name, email: ctx.user.email } : null,
+    })),
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(ACCOUNT_COOKIE, {
+        httpOnly: true,
+        path: "/",
+        sameSite: "lax",
+        secure: cookieOptions.secure,
+      });
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
@@ -79,6 +117,27 @@ export const appRouter = router({
   }),
   nexo2: router({
     workspace: router({
+      importNotes: nexoProcedure
+        .input(z.object({ notes: z.array(memoryInputSchema).max(200) }))
+        .mutation(async ({ ctx, input }) => {
+          if (!ctx.user)
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Sign in before importing notes.",
+            });
+          const existing = new Set(
+            ctx.assistant.store.read().memory.map(n => `${n.kind}:${n.content}`)
+          );
+          let imported = 0;
+          for (const note of input.notes) {
+            const key = `${note.kind}:${note.content}`;
+            if (existing.has(key)) continue;
+            await ctx.assistant.executeTool("memory.capture", note);
+            existing.add(key);
+            imported++;
+          }
+          return { imported };
+        }),
       snapshot: nexoProcedure.query(({ ctx }) => {
         ctx.assistant.tick();
         return {

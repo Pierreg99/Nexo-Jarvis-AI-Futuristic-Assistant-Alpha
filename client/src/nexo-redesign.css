@@ -129,7 +129,6 @@ main > * { min-width: 0; }
   border-color: rgba(255,224,166,.82);
   box-shadow: 0 0 22px rgba(255,181,91,.62), inset 0 0 18px rgba(255,255,255,.46);
 }
-.core-image { filter: saturate(1.35) brightness(1.2) contrast(1.04); }
 
 .nexo-webgl-scene { position: absolute; inset: 0; min-height: 100%; }
 .nexo-webgl-scene canvas { display: block; width: 100% !important; height: 100% !important; }
@@ -192,6 +191,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 
 @media (prefers-reduced-motion: reduce) {
   .perimeter-module, .microphone-button { transition: none; }
-  .core-stage, .core-image, .orbit, .core-depth-shell-a, .core-depth-shell-b, .core-depth-lens, .core-glare, .core-particle { animation: none !important; }
+  .core-stage, .orbit, .core-depth-shell-a, .core-depth-shell-b, .core-depth-lens, .core-glare, .core-particle { animation: none !important; }
   .nexo-webgl-reticle { display: none; }
 }

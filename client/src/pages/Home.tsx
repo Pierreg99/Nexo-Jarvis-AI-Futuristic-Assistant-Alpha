@@ -54,7 +54,7 @@ import { getCurrentWeather, getLatestHeadlines } from "@shared/liveData";
 import { newId } from "@shared/nexo/store";
 import { useAssistant } from "@/hooks/useAssistant";
 import { useI18n } from "@/contexts/LanguageContext";
-import fusionCoreArtwork from "@/assets/nexo-fusion-core.webp";
+import { useSpeechOutput } from "@/hooks/useSpeechOutput";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import WorkspacePanels, {
   countdown,
@@ -138,6 +138,7 @@ export default function Home() {
   const [assistantState, setAssistantState] = useState<AssistantState>("idle");
   const [isRailOpen, setIsRailOpen] = useState(false);
   const isSoundOn = preferences.voiceEnabled;
+  const speechOutput = useSpeechOutput(preferences);
   const [input, setInput] = useState("");
   const [coordinates, setCoordinates] = useState<{
     latitude: number;
@@ -213,7 +214,7 @@ export default function Home() {
   useEffect(
     () => () => {
       speechRef.current?.abort?.();
-      window.speechSynthesis?.cancel();
+      speechOutput.cancel();
     },
     []
   );
@@ -224,27 +225,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (preferences.coordinates) {
-      setLocationState("ready");
-      return;
-    }
-    if (!navigator.geolocation) {
-      setLocationState("denied");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      position => {
-        setCoordinates({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setLocationState("ready");
-      },
-      () => setLocationState("denied"),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 900_000 }
-    );
-  }, []);
+    setCoordinates(preferences.coordinates);
+    setLocationState(preferences.coordinates ? "ready" : "denied");
+  }, [preferences.coordinates]);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia(
@@ -386,7 +369,7 @@ export default function Home() {
     )
       return;
     commandBusy.current = true;
-    window.speechSynthesis?.cancel();
+    speechOutput.cancel();
     speechRef.current?.abort?.();
     const userTime = formatClock(new Date()).slice(0, 5);
     setPendingCommand({
@@ -406,17 +389,21 @@ export default function Home() {
         preferences.readOnly
       );
       setPendingCommand(null);
-      if (isSoundOn && "speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(reply);
-        utterance.lang = preferences.language;
-        utterance.rate = preferences.rate;
-        utterance.voice =
-          window.speechSynthesis
-            .getVoices()
-            .find(voice => voice.voiceURI === preferences.voice) ?? null;
-        utterance.onend = utterance.onerror = () => setAssistantState("idle");
-        setAssistantState("speaking");
-        window.speechSynthesis.speak(utterance);
+      if (isSoundOn) {
+        void speechOutput
+          .speak(
+            reply,
+            () => setAssistantState("speaking"),
+            () => setAssistantState("idle")
+          )
+          .catch(() => {
+            toast.error(
+              t(
+                "Speech playback failed. Check your voice provider or browser settings."
+              )
+            );
+            setAssistantState("idle");
+          });
       } else setAssistantState("idle");
     } catch {
       setPendingCommand(null);
@@ -452,7 +439,7 @@ export default function Home() {
     }
 
     const recognition = new Recognition();
-    window.speechSynthesis?.cancel();
+    speechOutput.cancel();
     recognition.lang = preferences.language;
     recognition.interimResults = false;
     recognition.continuous = false;
@@ -597,7 +584,7 @@ export default function Home() {
             onClick={() => {
               updatePreferences({ voiceEnabled: !isSoundOn });
               if (isSoundOn) {
-                window.speechSynthesis?.cancel();
+                speechOutput.cancel();
                 setAssistantState("idle");
               }
             }}
@@ -800,7 +787,16 @@ export default function Home() {
                         </div>
                       }
                     >
-                      <NexoCore3D key={coreSceneKey} state={assistantState} />
+                      <NexoCore3D
+                        key={coreSceneKey}
+                        state={assistantState}
+                        quality={preferences.renderQuality}
+                        paused={
+                          coreFocusOpen ||
+                          activeModule !== "command" ||
+                          calendarDialogOpen
+                        }
+                      />
                     </Suspense>
                   ) : (
                     <>
@@ -811,12 +807,10 @@ export default function Home() {
                         }}
                         aria-hidden="true"
                       >
-                        <img
-                          className="core-image"
-                          src={fusionCoreArtwork}
-                          alt=""
-                          draggable={false}
-                        />
+                        <div className="turbine-fallback">
+                          <div className="turbine-fallback-rotor" />
+                          <div className="turbine-fallback-hub" />
+                        </div>
                       </div>
                       <div className="orbit" />
                       <div className="core-glare" aria-hidden="true" />
@@ -955,6 +949,11 @@ export default function Home() {
                 <div className="relative z-10 flex items-start justify-between">
                   <div>
                     <div className="technical-label">{t("Local weather")}</div>
+                    {preferences.locationName && (
+                      <p className="mt-2 text-xs text-cyan-100/70">
+                        {preferences.locationName}
+                      </p>
+                    )}
                     {weatherLoading ? (
                       <div className="live-loading-title">
                         <span className="live-loading-orbit" />
@@ -981,11 +980,18 @@ export default function Home() {
                           ? t("Weather relay is temporarily unavailable.")
                           : locationState === "denied"
                             ? t(
-                                "Enable location access to receive weather telemetry."
+                                "Choose a city or use your location for weather."
                               )
                             : t("Locating your command environment…")}
                     </p>
                   </div>
+                  <button
+                    className="integration-button ml-2"
+                    onClick={() => setActiveModule("settings")}
+                    aria-label={t("Choose location")}
+                  >
+                    {t("Location")}
+                  </button>
                   <button
                     onClick={() =>
                       coordinates && void refreshWeather(coordinates)
@@ -1174,8 +1180,11 @@ export default function Home() {
           void submitCommand(command);
         }}
         coordinates={coordinates}
-        onCoordinates={location => {
-          updatePreferences({ coordinates: location });
+        onCoordinates={(location, name) => {
+          updatePreferences({
+            coordinates: location,
+            locationName: name || "",
+          });
           setCoordinates(location);
           setLocationState("ready");
         }}
@@ -1301,6 +1310,7 @@ export default function Home() {
                 key={`focus-${coreSceneKey}`}
                 state={assistantState}
                 immersive
+                quality={preferences.renderQuality}
               />
             </Suspense>
           ) : (

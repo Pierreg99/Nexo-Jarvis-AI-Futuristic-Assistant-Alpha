@@ -95,6 +95,15 @@ Timer unterstützen Sekunden, Minuten, Stunden und kombinierte Zeitspannen bis z
 
 Browser und Server verwenden getrennte Speicher; ein Wechsel synchronisiert keine Notizen. Das Löschen der Website-Daten entfernt den lokalen Arbeitsbereich. In beiden Betriebsarten sind externe Kalenderanbieter noch nicht verbunden.
 
+## Standort, natürliche Stimmen und Kontosynchronisierung
+
+- **Standort:** Stadt oder Postleitzahl suchen, Koordinaten eingeben oder den Standort ausdrücklich freigeben. Die Stadtsuche benötigt keinen API-Schlüssel. Android Alpha 2 unterstützt die ungefähre Standortberechtigung.
+- **Natürliche Stimmen:** Browserstimmen oder serverseitig eingerichtete OpenAI-/ElevenLabs-Stimmen auswählen. Anbieterschlüssel bleiben auf dem Server; natürliche Stimmen setzen standardmäßig eine Anmeldung voraus.
+- **OAuth und Synchronisierung:** Auf dem Node-Server mit Google oder Microsoft anmelden, um denselben Arbeitsbereich auf mehreren Geräten zu nutzen. Sichtbare Ansichten aktualisieren sich alle zehn Sekunden. Ein Import von Notizen vor der Anmeldung ist ausdrücklich auswählbar.
+- **Leistung:** Instanzierte Turbinenschaufeln, statische Reflexionen, pausierte Hintergrundansichten sowie automatische Qualität, Energiesparmodus und hohe Details. Im kontrollierten Rendering-Check wurden rund 59 % weniger Draw Calls und 85 % weniger Dreiecke pro Bild übermittelt.
+
+[Einrichtung von Anbietern und OAuth](docs/PROVIDERS.md) · [Messmethode und Qualitätsmodi](docs/PERFORMANCE.md). Diese technischen Anleitungen werden auf Englisch gepflegt.
+
 ## Android-APK
 
 Die Android-Alpha bündelt diese Oberfläche und die lokale Befehlsverarbeitung in einer WebView-App für **Android 8.0 oder neuer**. Notizen und Einstellungen werden auf dem Gerät gespeichert. Wetter und Nachrichten benötigen weiterhin Internetzugriff.
@@ -103,7 +112,7 @@ Die Android-Alpha bündelt diese Oberfläche und die lokale Befehlsverarbeitung 
 corepack pnpm android:build
 ```
 
-Dafür werden JDK 21 und Android SDK 35 benötigt. Das Ergebnis liegt unter `artifacts/nexo-jarvis-1.0.0-alpha.1-debug.apk`. Der [Android-Workflow](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/android.yml) stellt nach einem erfolgreichen Lauf außerdem APK, Prüfsumme und Lint-Bericht als Download bereit.
+Dafür werden JDK 21 und Android SDK 35 benötigt. Das Ergebnis liegt unter `artifacts/nexo-jarvis-1.0.0-alpha.2-debug.apk`. Der [Android-Workflow](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/actions/workflows/android.yml) stellt nach einem erfolgreichen Lauf außerdem APK, Prüfsumme und Lint-Bericht als Download bereit.
 
 Dies ist eine mit einem Debug-Schlüssel signierte Alpha. Native Spracheingabe, Hintergrundalarme, native Benachrichtigungen und eine Serverauswahl sind noch nicht enthalten. [Build, Installation und Grenzen](docs/ANDROID.md).
 

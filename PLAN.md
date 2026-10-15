@@ -4,15 +4,16 @@ This is the current project plan. [HANDOVER.md](HANDOVER.md) records the deliver
 
 ## This delivery
 
-| Work                               | Status      | Acceptance                                                                                     |
-| ---------------------------------- | ----------- | ---------------------------------------------------------------------------------------------- |
-| English and German README overhaul | Implemented | Matching feature coverage, working local links, clear setup and runtime limits                 |
-| Screenshot refresh                 | Captured    | Current desktop, mobile, immersive, knowledge, and German settings views; all images inspected |
-| Changelog and operational handover | Implemented | Historical entries retained; current changes and remaining work distinguished                  |
-| Android wrapper and build script   | Implemented | Bundled root-path web client, local storage, external links, Back handling, and adaptive icon  |
-| APK verification                   | Verified    | `assembleDebug`, Android lint, APK signature, and bundled assets checked                       |
-| Android CI                         | Verified    | Workflow uploads a debug APK, checksum, and lint report after checks                           |
-| Physical-device acceptance         | Pending     | Checklist in [docs/ANDROID.md](docs/ANDROID.md) completed on Android hardware                  |
+| Work                                      | Status                                   | Acceptance                                                                                                      |
+| ----------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Turbine realism and rendering cost        | Implemented and measured                 | Instanced vanes, static reflections/shadows, quality/frame caps; submitted work reduced in the controlled check |
+| Visibility and interaction                | Browser-verified                         | Paused rendering behind panels; quality/language persist; no mobile horizontal overflow                         |
+| Location                                  | Browser-verified; Android build verified | City search, explicit GPS, stored coordinates; native approximate-location permission compiled/linted           |
+| Natural voices                            | Provider transport tests passed          | OpenAI/ElevenLabs, authenticated access, configured voice allowlist, request quotas, cancellation/playback      |
+| Google/Microsoft OAuth and workspace sync | Signed-fixture tests passed              | PKCE/state/identity verification, same-identity sync, cross-account isolation, explicit note import             |
+| Real provider credentials                 | Pending configuration                    | Complete consent and playback checks on the intended HTTPS server                                               |
+| Documentation and screenshots             | Updated                                  | English/German feature copy, provider/performance guides, current turbine captures                              |
+| Android alpha 2                           | Built and linted                         | APK signature verified; physical-device acceptance remains pending                                              |
 
 ## Next: Android release readiness
 
@@ -30,7 +31,7 @@ This is the current project plan. [HANDOVER.md](HANDOVER.md) records the deliver
 | Location access                    | Request access only after a user action; retain manual coordinates; handle denial and revocation                                 |
 | Optional server connection         | Explicit user-configured HTTPS endpoint, authenticated requests, documented data ownership, and no silent replay of local writes |
 
-These are future tasks. The current APK does not claim native speech, background alarms, notifications, location access, or a server connection.
+These are future tasks. The current APK supports approximate location after an explicit request. Native speech, background alarms, notifications, and a remote-server connection remain future work.
 
 ## Web and engine improvements
 

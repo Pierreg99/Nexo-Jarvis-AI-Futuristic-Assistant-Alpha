@@ -2,7 +2,23 @@
 
 User-visible changes are listed newest first. Historical version headings below are retained from the original project log; they are not a claim that matching GitHub releases were published.
 
-## Unreleased — Android alpha and documentation refresh
+## Unreleased — Turbine, location, natural voices, and account sync
+
+### Added
+
+- Removed the reactor photo backdrop from WebGL and fallback views; the turbine is fully procedural.
+- An instanced 24-vane metallic turbine, procedural studio reflections, automatic/battery/high-detail rendering modes, frame caps, and visibility-aware rendering suspension.
+- City/postcode search via Open-Meteo and explicit browser GPS requests; Android alpha 2 adds approximate location permission.
+- Server-side OpenAI and ElevenLabs speech output, selectable voices, cancellation, bounded input/audio, and per-account request limits.
+- Google/Microsoft OAuth sign-in with state, PKCE, verified identity tokens, and isolated persistent account workspaces. Visible clients refresh every ten seconds.
+- Explicit pre-login note import with duplicate skipping. Existing local and guest workspaces remain separate.
+- Provider setup and performance measurement documentation; OAuth/voice integration tests.
+
+### Validation
+
+The controlled Chromium check submitted 31 draw calls and 39,378 triangles per frame, compared with 76 and 266,314 at the baseline. These are rendering counters, not physical-device frame-rate or battery measurements. Live OAuth and provider voices require configured credentials; account and provider behavior was tested with controlled signed/token/audio responses.
+
+## 2026-10-15 — Android alpha and documentation refresh
 
 ### Added
 

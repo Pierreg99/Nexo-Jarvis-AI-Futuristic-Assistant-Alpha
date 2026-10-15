@@ -1,20 +1,31 @@
 import { useI18n } from "@/contexts/LanguageContext";
 import {
   ContactShadows,
+  Environment,
+  Lightformer,
   OrbitControls,
   Sparkles,
   Stars,
 } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import * as THREE from "three";
-import fusionCoreArtwork from "@/assets/nexo-fusion-core.webp";
 
 export type NexoCoreState = "idle" | "listening" | "thinking" | "speaking";
 
 type NexoCore3DProps = {
   state: NexoCoreState;
   immersive?: boolean;
+  quality?: "auto" | "eco" | "high";
+  paused?: boolean;
 };
 
 const statePalette: Record<
@@ -116,7 +127,7 @@ function OrbitRing({
   });
   return (
     <mesh ref={ref} rotation={tilt}>
-      <torusGeometry args={[radius, tube, 24, 112]} />
+      <torusGeometry args={[radius, tube, 12, 96]} />
       <meshPhysicalMaterial
         color={color}
         emissive={color}
@@ -219,7 +230,7 @@ function PlasmaBand({
 
   return (
     <mesh rotation={[1.18, 0.12, -0.3]} renderOrder={1}>
-      <torusGeometry args={[1.34, 0.084, 24, 192]} />
+      <torusGeometry args={[1.34, 0.055, 12, 128]} />
       <meshBasicMaterial
         ref={material}
         map={texture}
@@ -315,6 +326,132 @@ function FluxStream({
   );
 }
 
+/** A single instanced draw for the swept metal vanes, rather than a dense opaque shell. */
+function TurbineRotor({
+  state,
+  reducedMotion,
+}: {
+  state: NexoCoreState;
+  reducedMotion: boolean;
+}) {
+  const blades = useRef<THREE.InstancedMesh>(null);
+  const rotor = useRef<THREE.Group>(null);
+  const speed = useRef(0.12);
+  const geometry = useMemo(() => {
+    const shape = new THREE.Shape();
+    shape.moveTo(0.46, -0.02);
+    shape.lineTo(0.94, -0.14);
+    shape.quadraticCurveTo(1.02, -0.1, 1.02, -0.02);
+    shape.lineTo(0.53, 0.075);
+    shape.quadraticCurveTo(0.46, 0.07, 0.46, -0.02);
+    const blade = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.065,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.008,
+      bevelThickness: 0.012,
+      curveSegments: 5,
+    });
+    const vertices = blade.attributes.position;
+    for (let i = 0; i < vertices.count; i++) {
+      const x = vertices.getX(i),
+        y = vertices.getY(i);
+      vertices.setZ(
+        i,
+        vertices.getZ(i) +
+          Math.sin(((x - 0.46) / 0.56) * Math.PI) * 0.06 +
+          y * 0.35
+      );
+    }
+    blade.computeVertexNormals();
+    return blade;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useLayoutEffect(() => {
+    if (!blades.current) return;
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < 24; i++) {
+      matrix.makeRotationZ((i * Math.PI * 2) / 24);
+      blades.current.setMatrixAt(i, matrix);
+    }
+    blades.current.instanceMatrix.needsUpdate = true;
+  }, []);
+  useFrame((_, delta) => {
+    if (!rotor.current || reducedMotion) return;
+    const step = Math.min(delta, 0.05);
+    speed.current = THREE.MathUtils.damp(
+      speed.current,
+      0.08 + statePalette[state].speed * 0.38,
+      2,
+      step
+    );
+    rotor.current.rotation.z -= step * speed.current;
+  });
+  return (
+    <group rotation={[0.16, -0.18, 0]}>
+      <group ref={rotor}>
+        <instancedMesh ref={blades} args={[geometry, undefined, 24]}>
+          <meshPhysicalMaterial
+            color="#8c9996"
+            metalness={0.94}
+            roughness={0.32}
+            clearcoat={0.45}
+          />
+        </instancedMesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.035]}>
+          <cylinderGeometry args={[0.41, 0.46, 0.15, 40]} />
+          <meshPhysicalMaterial
+            color="#4d5d60"
+            metalness={0.92}
+            roughness={0.28}
+            clearcoat={0.6}
+          />
+        </mesh>
+      </group>
+      <mesh position={[0, 0, 0.14]}>
+        <torusGeometry args={[0.34, 0.022, 10, 64]} />
+        <meshStandardMaterial
+          color={statePalette[state].energy}
+          emissive={statePalette[state].energy}
+          emissiveIntensity={1.3}
+          metalness={0.5}
+          roughness={0.3}
+        />
+      </mesh>
+      <mesh>
+        <torusGeometry args={[1.035, 0.035, 10, 96]} />
+        <meshPhysicalMaterial
+          color="#a18b70"
+          metalness={0.92}
+          roughness={0.3}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function RenderLoop({ active, fps }: { active: boolean; fps: number }) {
+  const advance = useThree(s => s.advance);
+  const elapsed = useRef(0);
+  useEffect(() => {
+    if (!active) return;
+    let frame = 0,
+      previous = performance.now();
+    const draw = (now: number) => {
+      if (now - previous >= 1000 / fps - 0.5) {
+        elapsed.current += Math.min(now - previous, 100) / 1000;
+        previous = now;
+        advance(elapsed.current, true);
+      }
+      frame = requestAnimationFrame(draw);
+    };
+    frame = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(frame);
+  }, [active, fps, advance]);
+  return null;
+}
+
 function NexoMachine({
   state,
   reducedMotion,
@@ -328,17 +465,6 @@ function NexoMachine({
   const glow = useRef<THREE.PointLight>(null);
   const fieldRing = useRef<THREE.Mesh>(null);
   const outerHousingRing = useRef<THREE.Mesh>(null);
-  const housingMaterial = useMemo(
-    () =>
-      new THREE.MeshPhysicalMaterial({
-        color: "#202a2d",
-        metalness: 0.94,
-        roughness: 0.29,
-        clearcoat: 0.82,
-        clearcoatRoughness: 0.24,
-      }),
-    []
-  );
 
   useFrame(({ clock }, delta) => {
     const elapsed = clock.getElapsedTime();
@@ -410,26 +536,9 @@ function NexoMachine({
       />
       <directionalLight position={[4, 4, 5]} color="#d9f0ef" intensity={1.7} />
 
-      {/* The vessel and field rings give the high-detail core artwork a live, dimensional center. */}
-      <mesh material={housingMaterial} scale={[1.02, 1.02, 0.86]}>
-        <sphereGeometry args={[1.08, 96, 96]} />
-      </mesh>
-      <mesh scale={[1.08, 1.08, 0.89]}>
-        <sphereGeometry args={[1.08, 96, 96]} />
-        <meshPhysicalMaterial
-          color="#6fdae4"
-          transparent
-          opacity={0.065}
-          metalness={0.18}
-          roughness={0.12}
-          transmission={0.72}
-          thickness={0.34}
-          clearcoat={1}
-          depthWrite={false}
-        />
-      </mesh>
+      <TurbineRotor state={state} reducedMotion={reducedMotion} />
       <mesh rotation={[1.18, 0.12, -0.3]}>
-        <torusGeometry args={[1.16, 0.052, 24, 128]} />
+        <torusGeometry args={[1.16, 0.038, 12, 96]} />
         <meshPhysicalMaterial
           color="#68797a"
           metalness={0.96}
@@ -451,7 +560,7 @@ function NexoMachine({
         />
       </mesh>
       <mesh ref={outerHousingRing} rotation={[-0.4, 0.86, -0.1]}>
-        <torusGeometry args={[1.47, 0.024, 16, 128]} />
+        <torusGeometry args={[1.47, 0.024, 10, 96]} />
         <meshPhysicalMaterial
           color="#5c6c6d"
           metalness={0.97}
@@ -459,18 +568,18 @@ function NexoMachine({
           clearcoat={0.7}
         />
       </mesh>
-      <mesh ref={core}>
-        <sphereGeometry args={[0.31, 64, 64]} />
+      <mesh ref={core} position={[0, 0, 0.2]}>
+        <sphereGeometry args={[0.23, 32, 24]} />
         <meshStandardMaterial
-          color="#fff2d7"
+          color="#8da8aa"
           emissive={palette.energy}
-          emissiveIntensity={2.2}
-          metalness={0.18}
-          roughness={0.2}
+          emissiveIntensity={0.35}
+          metalness={0.72}
+          roughness={0.27}
         />
       </mesh>
       <mesh scale={[0.66, 0.66, 0.66]}>
-        <sphereGeometry args={[0.31, 48, 48]} />
+        <sphereGeometry args={[0.23, 24, 20]} />
         <meshBasicMaterial color="#fff7e7" transparent opacity={0.68} />
       </mesh>
 
@@ -545,13 +654,48 @@ function NexoMachine({
   );
 }
 
-export default function NexoCore3D({
+function NexoCore3D({
   state,
   immersive = false,
+  quality = "auto",
+  paused = false,
 }: NexoCore3DProps) {
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
   const manualControl = useRef(false);
+  const container = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(true);
+  const [pageVisible, setPageVisible] = useState(() => !document.hidden);
+  const [compact, setCompact] = useState(
+    () =>
+      window.matchMedia("(max-width: 700px)").matches ||
+      navigator.hardwareConcurrency <= 4
+  );
+  useEffect(() => {
+    const change = () => setPageVisible(!document.hidden);
+    const media = window.matchMedia("(max-width: 700px)");
+    const resize = () =>
+      setCompact(media.matches || navigator.hardwareConcurrency <= 4);
+    document.addEventListener("visibilitychange", change);
+    media.addEventListener("change", resize);
+    const observer = new IntersectionObserver(entries =>
+      setVisible(entries[0]?.isIntersecting ?? true)
+    );
+    if (container.current) observer.observe(container.current);
+    return () => {
+      document.removeEventListener("visibilitychange", change);
+      media.removeEventListener("change", resize);
+      observer.disconnect();
+    };
+  }, []);
+  const eco = quality === "eco" || (quality === "auto" && compact);
+  const fps = eco ? 30 : quality === "high" ? 60 : 40;
+  const active = visible && pageVisible && !paused;
+  const dpr = eco
+    ? 1
+    : quality === "high"
+      ? Math.min(devicePixelRatio, immersive ? 1.75 : 1.6)
+      : Math.min(devicePixelRatio, 1.25);
   const reactorEnergy =
     state === "thinking"
       ? "#ffc078"
@@ -562,14 +706,16 @@ export default function NexoCore3D({
           : "#61d9e2";
   return (
     <div
-      className={`nexo-webgl-scene nexo-core-state-${state} ${immersive ? "nexo-webgl-scene-immersive" : ""}`}
+      ref={container}
+      className={`${!active ? "reactor-render-paused " : ""}nexo-webgl-scene nexo-core-state-${state} ${immersive ? "nexo-webgl-scene-immersive" : ""}`}
       role="img"
       aria-label={t("Interactive three-dimensional Nexo core, {state} state", {
         state: t(state),
       })}
     >
       <Canvas
-        dpr={[1, immersive ? 2 : 1.6]}
+        dpr={dpr}
+        frameloop={reducedMotion ? "demand" : "never"}
         camera={{
           position: [0, 0.1, immersive ? 6.2 : 6.8],
           fov: immersive ? 38 : 42,
@@ -577,9 +723,39 @@ export default function NexoCore3D({
         gl={{
           antialias: true,
           alpha: true,
-          powerPreference: "high-performance",
+          powerPreference: eco ? "low-power" : "default",
         }}
       >
+        {!reducedMotion && <RenderLoop active={active} fps={fps} />}
+        <Environment resolution={64} frames={1}>
+          <Lightformer
+            position={[-1, 1, 4]}
+            scale={[4, 1.2, 1]}
+            intensity={1.15}
+            color="#bfcaca"
+          />
+          <Lightformer
+            position={[3, 2, 3]}
+            rotation={[0, -Math.PI / 4, 0]}
+            scale={[4, 2, 1]}
+            intensity={3}
+            color="#d4eeee"
+          />
+          <Lightformer
+            position={[-3, 1, 2]}
+            rotation={[0, Math.PI / 4, 0]}
+            scale={[2, 4, 1]}
+            intensity={2}
+            color="#e2b783"
+          />
+          <Lightformer
+            position={[0, 4, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
+            scale={[4, 4, 1]}
+            intensity={2}
+            color="#c4dde1"
+          />
+        </Environment>
         <fog attach="fog" args={["#05090c", 5.5, 13]} />
         <ambientLight intensity={0.34} color="#b1c9c9" />
         <NexoMachine state={state} reducedMotion={reducedMotion} />
@@ -590,6 +766,8 @@ export default function NexoCore3D({
           manualControl={manualControl}
         />
         <ContactShadows
+          frames={1}
+          resolution={128}
           position={[0, -2.25, 0]}
           opacity={0.58}
           scale={8}
@@ -612,13 +790,6 @@ export default function NexoCore3D({
           autoRotateSpeed={statePalette[state].speed * 0.55}
         />
       </Canvas>
-      <img
-        className="nexo-webgl-artwork"
-        src={fusionCoreArtwork}
-        alt=""
-        aria-hidden="true"
-        draggable={false}
-      />
       <div
         className="reactor-field-overlay"
         aria-hidden="true"
@@ -683,3 +854,5 @@ export default function NexoCore3D({
     </div>
   );
 }
+
+export default memo(NexoCore3D);

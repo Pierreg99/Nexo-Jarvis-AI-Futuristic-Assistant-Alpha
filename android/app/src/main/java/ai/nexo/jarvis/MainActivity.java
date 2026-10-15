@@ -1,6 +1,9 @@
 package ai.nexo.jarvis;
 
 import android.app.Activity;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.webkit.GeolocationPermissions;
 import android.annotation.SuppressLint;
 import android.window.OnBackInvokedDispatcher;
 import android.content.ActivityNotFoundException;
@@ -30,6 +33,9 @@ public final class MainActivity extends Activity {
     private static final String LOCAL_HOST = "appassets.androidplatform.net";
     private static final String START_URL = "https://" + LOCAL_HOST + "/";
     private WebView webView;
+    private GeolocationPermissions.Callback locationCallback;
+    private String locationOrigin;
+    private static final int LOCATION_PERMISSION = 100;
 
     // The bundled React client requires JS; external pages open outside this WebView.
     @SuppressLint("SetJavaScriptEnabled")
@@ -60,10 +66,23 @@ public final class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
-        settings.setGeolocationEnabled(false);
+        settings.setGeolocationEnabled(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setMediaPlaybackRequiresUserGesture(true);
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                if (!isLocal(Uri.parse(origin))) { callback.invoke(origin, false, false); return; }
+                if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    callback.invoke(origin, true, false);
+                } else {
+                    if (locationCallback != null) locationCallback.invoke(locationOrigin, false, false);
+                    locationCallback = callback;
+                    locationOrigin = origin;
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION);
+                }
+            }
+        });
 
         WebViewAssetLoader assets = new WebViewAssetLoader.Builder()
                 .setDomain(LOCAL_HOST)
@@ -132,6 +151,15 @@ public final class MainActivity extends Activity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grants) {
+        super.onRequestPermissionsResult(requestCode, permissions, grants);
+        if (requestCode == LOCATION_PERMISSION && locationCallback != null) {
+            locationCallback.invoke(locationOrigin, grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED, false);
+            locationCallback = null;
+        }
+    }
+
+    @Override
     protected void onSaveInstanceState(Bundle state) {
         webView.saveState(state);
         super.onSaveInstanceState(state);
@@ -151,6 +179,7 @@ public final class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (locationCallback != null) { locationCallback.invoke(locationOrigin, false, false); locationCallback = null; }
         ((FrameLayout) webView.getParent()).removeView(webView);
         webView.destroy();
         super.onDestroy();

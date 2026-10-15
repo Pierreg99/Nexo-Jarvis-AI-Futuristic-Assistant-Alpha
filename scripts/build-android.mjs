@@ -27,7 +27,7 @@ if (!process.argv.includes("--prepare-only")) {
   );
   const artifactDir = path.join(root, "artifacts");
   mkdirSync(artifactDir, { recursive: true });
-  const apk = path.join(artifactDir, "nexo-jarvis-1.0.0-alpha.1-debug.apk");
+  const apk = path.join(artifactDir, "nexo-jarvis-1.0.0-alpha.2-debug.apk");
   copyFileSync(
     path.join(root, "android/app/build/outputs/apk/debug/app-debug.apk"),
     apk
