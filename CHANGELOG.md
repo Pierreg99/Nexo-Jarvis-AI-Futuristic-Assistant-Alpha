@@ -1,12 +1,39 @@
 # Changelog
 
-Alle relevanten Änderungen am Projekt werden in umgekehrt chronologischer Reihenfolge dokumentiert.
+User-visible changes are listed newest first. Historical version headings below are retained from the original project log; they are not a claim that matching GitHub releases were published.
 
-## [Unreleased]
+## Unreleased — Android alpha and documentation refresh
 
-### Dokumentation
+### Added
 
-Die Projektinformationen werden in README, Changelog und Fortschrittsbericht zentralisiert. Setup, Architektur, Datenquellen, Tests und bekannte Grenzen sind jetzt nachvollziehbar beschrieben.
+- Android WebView packaging for the bundled browser client, with local storage, external-browser links, Android Back handling, and an adaptive launcher icon.
+- An APK build script, a pinned Gradle wrapper, and a GitHub Actions workflow that produces a debug APK, checksum, and lint report.
+- Android setup and limitation notes in [docs/ANDROID.md](docs/ANDROID.md).
+- A delivery plan in [PLAN.md](PLAN.md) and operational handover in [HANDOVER.md](HANDOVER.md).
+- New immersive-reactor and knowledge-panel screenshots, plus capture instructions.
+
+### Changed
+
+- Rebuilt the English and German READMEs with a visual gallery, first-run walkthrough, command examples, runtime comparison, and deployment guidance.
+- Replaced the desktop dashboard, German settings, and German mobile screenshots with current captures.
+
+## 2026-10-15 — Reactor interaction refinement
+
+Source: [`165dfdd`](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/commit/165dfdd).
+
+- Particle trajectories retain their phase and ease into new speeds when assistant state changes.
+- Automatic camera positioning yields to drag and zoom until the next state change.
+- Immersive camera framing is preserved, reduced-motion preference is read on initial render, and the secondary plasma trail loops at its own dash period.
+
+## 2026-10-13 — Reactor animation and artwork
+
+Sources: [`fbd21ac`](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/commit/fbd21ac), [`f3362ef`](https://github.com/Pierreg99/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/commit/f3362ef).
+
+- Integrated detailed reactor artwork with the live Three.js scene.
+- Added procedural plasma filaments, particle trails, rotating field rings, and state-reactive lighting.
+- Updated the English and German documentation and screenshot gallery.
+
+## Historical project entries
 
 ## [0.3.0] — Live-Dashboard
 

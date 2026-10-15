@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'ai.nexo.jarvis'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'ai.nexo.jarvis'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0-alpha.1'
+    }
+
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/webAssets')
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
+
+// Bundle exactly the client build. Server code and .env files never enter the APK.
+tasks.register('syncWebAssets', Sync) {
+    from rootProject.file('../dist/public')
+    into layout.buildDirectory.dir('generated/webAssets')
+    doFirst {
+        def index = rootProject.file('../dist/public/index.html')
+        if (!index.exists()) {
+            throw new GradleException('Build the web client first: npm run android:prepare')
+        }
+        if (index.text.contains('/Nexo-Jarvis-AI-Futuristic-Assistant-Alpha/')) {
+            throw new GradleException('Android needs a root-path build. Run npm run android:prepare.')
+        }
+    }
+}
+tasks.named('preBuild').configure { dependsOn 'syncWebAssets' }
