@@ -31,4 +31,13 @@ describe("immersive Nexo WebGL core", () => {
     expect(core).toContain("OrbitControls");
     expect(styles).toContain("touch-action: none");
   });
+
+  it("reduces scene cost on constrained devices and falls back on WebGL context loss", () => {
+    expect(core).toContain("hasConstrainedGraphicsBudget");
+    expect(core).toContain('count={reducedMotion ? 18 : eco ? 28 : state === "thinking" ? 84 : 48}');
+    expect(core).toContain('count={reducedMotion ? 56 : eco ? 100 : 220}');
+    expect(core).toContain('"webglcontextlost"');
+    expect(core).toContain("onContextLost?.()");
+    expect(home).toContain("onContextLost={() => setWebglEnabled(false)}");
+  });
 });
