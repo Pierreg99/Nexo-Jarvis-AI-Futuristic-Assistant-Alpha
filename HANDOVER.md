@@ -22,7 +22,7 @@ Older `NEXO2_*`, `PROGRESS.md`, and prototype check files remain historical work
 
 ## Key paths and design decisions
 
-- `client/src/components/NexoCore3D.tsx`: instanced vanes, procedural reflections, frame scheduler, camera, and visibility controls. The clock advances only while rendering and clamps resume deltas.
+- `client/src/components/NexoCore3D.tsx`: instanced turbine vanes, procedural plasma/reflections, state-aware camera, visibility-aware frame scheduler, adaptive DPR, and eco/high quality profiles. Constrained devices reduce antialiasing, environment/shadow resolution, stars, and sparkles. A lost WebGL context falls back to the CSS reactor, and reduced-motion mode keeps the scene static.
 - `client/src/hooks/usePreferences.ts`: backward-compatible defaults for quality, voice provider, voice selection, and location label.
 - `client/src/components/LocationControls.tsx`: bounded city search and explicit geolocation. The dashboard does not request GPS on startup.
 - `client/src/hooks/useSpeechOutput.ts`: shared playback/cancellation, browser voice selection, provider requests, and temporary audio URL cleanup.
