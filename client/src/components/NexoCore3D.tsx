@@ -26,6 +26,7 @@ type NexoCore3DProps = {
   immersive?: boolean;
   quality?: "auto" | "eco" | "high";
   paused?: boolean;
+  onContextLost?: () => void;
 };
 
 const statePalette: Record<
@@ -37,6 +38,12 @@ const statePalette: Record<
   thinking: { energy: "#ffb966", intensity: 2.8, speed: 1.35 },
   speaking: { energy: "#72dbe8", intensity: 1.9, speed: 0.8 },
 };
+
+function hasConstrainedGraphicsBudget() {
+  const hardwareConcurrency = navigator.hardwareConcurrency || 8;
+  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  return hardwareConcurrency <= 4 || (deviceMemory !== undefined && deviceMemory <= 4);
+}
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(
@@ -455,9 +462,11 @@ function RenderLoop({ active, fps }: { active: boolean; fps: number }) {
 function NexoMachine({
   state,
   reducedMotion,
+  eco,
 }: {
   state: NexoCoreState;
   reducedMotion: boolean;
+  eco: boolean;
 }) {
   const palette = statePalette[state];
   const group = useRef<THREE.Group>(null);
@@ -634,7 +643,7 @@ function NexoMachine({
       />
 
       <Sparkles
-        count={reducedMotion ? 18 : state === "thinking" ? 84 : 48}
+        count={reducedMotion ? 18 : eco ? 28 : state === "thinking" ? 84 : 48}
         scale={[5.6, 4.8, 3.5]}
         size={reducedMotion ? 0.8 : state === "speaking" ? 1.8 : 1.1}
         speed={reducedMotion ? 0 : palette.speed * 0.55}
@@ -644,7 +653,7 @@ function NexoMachine({
       <Stars
         radius={8}
         depth={4}
-        count={reducedMotion ? 56 : 220}
+        count={reducedMotion ? 56 : eco ? 100 : 220}
         factor={1.8}
         saturation={0.12}
         fade
@@ -659,6 +668,7 @@ function NexoCore3D({
   immersive = false,
   quality = "auto",
   paused = false,
+  onContextLost,
 }: NexoCore3DProps) {
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
@@ -669,13 +679,13 @@ function NexoCore3D({
   const [compact, setCompact] = useState(
     () =>
       window.matchMedia("(max-width: 700px)").matches ||
-      navigator.hardwareConcurrency <= 4
+      hasConstrainedGraphicsBudget()
   );
   useEffect(() => {
     const change = () => setPageVisible(!document.hidden);
     const media = window.matchMedia("(max-width: 700px)");
     const resize = () =>
-      setCompact(media.matches || navigator.hardwareConcurrency <= 4);
+      setCompact(media.matches || hasConstrainedGraphicsBudget());
     document.addEventListener("visibilitychange", change);
     media.addEventListener("change", resize);
     const observer = new IntersectionObserver(entries =>
@@ -714,6 +724,16 @@ function NexoCore3D({
       })}
     >
       <Canvas
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener(
+            "webglcontextlost",
+            event => {
+              event.preventDefault();
+              onContextLost?.();
+            },
+            { once: true }
+          );
+        }}
         dpr={dpr}
         frameloop={reducedMotion ? "demand" : "never"}
         camera={{
@@ -721,13 +741,13 @@ function NexoCore3D({
           fov: immersive ? 38 : 42,
         }}
         gl={{
-          antialias: true,
+          antialias: !eco,
           alpha: true,
           powerPreference: eco ? "low-power" : "default",
         }}
       >
         {!reducedMotion && <RenderLoop active={active} fps={fps} />}
-        <Environment resolution={64} frames={1}>
+        <Environment resolution={eco ? 32 : quality === "high" ? 96 : 64} frames={1}>
           <Lightformer
             position={[-1, 1, 4]}
             scale={[4, 1.2, 1]}
@@ -758,7 +778,7 @@ function NexoCore3D({
         </Environment>
         <fog attach="fog" args={["#05090c", 5.5, 13]} />
         <ambientLight intensity={0.34} color="#b1c9c9" />
-        <NexoMachine state={state} reducedMotion={reducedMotion} />
+        <NexoMachine state={state} reducedMotion={reducedMotion} eco={eco} />
         <CameraResponse
           state={state}
           reducedMotion={reducedMotion}
@@ -767,7 +787,7 @@ function NexoCore3D({
         />
         <ContactShadows
           frames={1}
-          resolution={128}
+          resolution={eco ? 64 : quality === "high" ? 192 : 128}
           position={[0, -2.25, 0]}
           opacity={0.58}
           scale={8}
