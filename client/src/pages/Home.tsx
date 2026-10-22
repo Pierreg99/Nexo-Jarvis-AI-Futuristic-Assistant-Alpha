@@ -791,6 +791,7 @@ export default function Home() {
                         key={coreSceneKey}
                         state={assistantState}
                         quality={preferences.renderQuality}
+                        onContextLost={() => setWebglEnabled(false)}
                         paused={
                           coreFocusOpen ||
                           activeModule !== "command" ||
